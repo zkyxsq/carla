@@ -59,7 +59,6 @@ namespace road {
     }
   }
 
-
   /// Return a waypoint for each drivable lane on @a lane_section.
   template <typename FuncT>
   static void ForEachDrivableLaneImpl(

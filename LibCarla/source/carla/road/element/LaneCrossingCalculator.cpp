@@ -8,6 +8,9 @@
 
 #include "carla/geom/Location.h"
 #include "carla/road/Map.h"
+#include "carla/ListView.h"
+#include "carla/road/element/RoadInfoMarkRecord.h"
+#include "carla/road/element/WaypointInformationTypes.h"
 
 namespace carla {
 namespace road {
@@ -18,43 +21,70 @@ namespace element {
   ///
   /// @todo This should use the info in the OpenDrive instead.
   static std::vector<LaneMarking> CrossingAtSameSection(
-      const int lane_id_origin,
-      const int lane_id_destination,
-      const bool origin_is_offroad,
-      const bool destination_is_offroad) {
-    if (origin_is_offroad != destination_is_offroad) {
-      return { LaneMarking::Solid };
-    } else if (lane_id_origin == lane_id_destination) {
-      return {};
-    } else if (lane_id_origin * lane_id_destination < 0) {
-      return { LaneMarking::Solid };
+      const Map &map,
+      const Waypoint *wp_origin,
+      bool origin_is_at_left) {
+    auto marks_wp_origin = map.GetMarkRecord(*wp_origin);
+
+    if (origin_is_at_left) {
+      if (wp_origin->lane_id > 0.0) {
+        // inner lane mark
+        const auto r = WaypointInfoRoadMark(*marks_wp_origin.second).type;
+        if (r != LaneMarking::None) {
+          return { r };
+        }
+      } else {
+        // outer lane mark
+        const auto r = WaypointInfoRoadMark(*marks_wp_origin.first).type;
+        if (r != LaneMarking::None) {
+          return { r };
+        }
+      }
     } else {
-      return { LaneMarking::Broken };
+      if (wp_origin->lane_id > 0.0) {
+        // outer lane mark
+        const auto r = WaypointInfoRoadMark(*marks_wp_origin.first).type;
+        if (r != LaneMarking::None) {
+          return { r };
+        }
+      } else {
+        // inner lane mark
+        const auto r = WaypointInfoRoadMark(*marks_wp_origin.second).type;
+        if (r != LaneMarking::None) {
+          return { r };
+        }
+      }
     }
+    return {};
   }
 
-  static bool IsOffRoad(const Map &map, const geom::Location &location) {
-    return !map.GetWaypoint(location).has_value();
-  }
+  // static bool IsOffRoad(const Map &map, const geom::Location &location) {
+  //   return !map.GetWaypoint(location).has_value();
+  // }
 
   std::vector<LaneMarking> LaneCrossingCalculator::Calculate(
       const Map &map,
       const geom::Location &origin,
       const geom::Location &destination) {
-    auto w0 = map.GetClosestWaypointOnRoad(origin);
-    auto w1 = map.GetClosestWaypointOnRoad(destination);
-    if (w0->road_id != w1->road_id) {
+    const auto w0 = map.GetClosestWaypointOnRoad(origin, static_cast<uint32_t>(Lane::LaneType::Any));
+    const auto w1 = map.GetClosestWaypointOnRoad(destination, static_cast<uint32_t>(Lane::LaneType::Any));
+
+    if (!w0.has_value() || !w1.has_value()) {
+      return {};
+    }
+    if (w0->road_id != w1->road_id || w0->section_id != w1->section_id) {
       /// @todo This case should also be handled.
       return {};
     }
     if (map.IsJunction(w0->road_id) || map.IsJunction(w1->road_id)) {
       return {};
     }
-    return CrossingAtSameSection(
-        w0->lane_id,
-        w1->lane_id,
-        IsOffRoad(map, origin),
-        IsOffRoad(map, destination));
+    if (w0->lane_id == w1->lane_id) {
+      // the waypoints are in the same lane
+      return {};
+    }
+
+    return CrossingAtSameSection(map, &*w0, (w0->lane_id > w1->lane_id));
   }
 
 } // namespace element
