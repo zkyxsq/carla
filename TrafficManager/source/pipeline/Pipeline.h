@@ -9,8 +9,10 @@
 #include "carla/client/BlueprintLibrary.h"
 #include "carla/client/Map.h"
 #include "carla/client/World.h"
+#include "carla/geom/Transform.h"
 #include "carla/Memory.h"
 #include "carla/Logging.h"
+#include "carla/rpc/Command.h"
 
 #include "BatchControlStage.h"
 #include "CollisionStage.h"
@@ -23,14 +25,24 @@
 
 namespace traffic_manager {
 
+namespace cc = carla::client;
+namespace cr = carla::rpc;
+  using ActorPtr = carla::SharedPtr<cc::Actor>;
+
   /// Function to read hardware concurrency
-  int read_core_count();
+  uint read_core_count();
 
   /// Function to spawn specified number of vehicles
-  std::vector<carla::SharedPtr<carla::client::Actor>> spawn_traffic(
-      carla::client::World &world,
-      int core_count,
-      int target_amount);
+  std::vector<ActorPtr> spawn_traffic(
+      cc::Client &client,
+      cc::World &world,
+      uint core_count,
+      uint target_amount);
+
+  /// Detroy actors
+  void destroy_traffic(
+      std::vector<ActorPtr> &actor_list,
+      cc::Client &client);
 
 <<<<<<< HEAD
   /// Work pipeline of traffic manager
@@ -54,24 +66,32 @@ namespace traffic_manager {
 
 =======
     /// Number of worker threads per stage
-    int pipeline_width;
+    uint pipeline_width;
     /// Target velocities
     float highway_target_velocity;
     float urban_target_velocity;
     /// Reference to list of all actors registered with traffic manager
+<<<<<<< HEAD
 >>>>>>> e2c8e19611819ecbb7026355674ba94b985ad488
     std::vector<carla::SharedPtr<carla::client::Actor>> &actor_list;
+=======
+    std::vector<ActorPtr> &actor_list;
+>>>>>>> b66f4b71d9abdefe0a53431f4ab6605b5e11e09b
     /// Reference to local map cache
     InMemoryMap &local_map;
     /// Reference to carla's debug helper object
-    carla::client::DebugHelper &debug_helper;
+    cc::DebugHelper &debug_helper;
     /// Reference to carla's client connection object
-    carla::client::Client &client_connection;
+    cc::Client &client_connection;
     /// Reference to carla's world object
+<<<<<<< HEAD
     carla::client::World &world;
 <<<<<<< HEAD
 
 =======
+=======
+    cc::World &world;
+>>>>>>> b66f4b71d9abdefe0a53431f4ab6605b5e11e09b
     /// Pointers to messenger objects connecting stage pairs
 >>>>>>> e2c8e19611819ecbb7026355674ba94b985ad488
     std::shared_ptr<CollisionToPlannerMessenger> collision_planner_messenger;
@@ -91,8 +111,6 @@ namespace traffic_manager {
     std::unique_ptr<MotionPlannerStage> planner_stage;
     std::unique_ptr<TrafficLightStage> traffic_light_stage;
 
-    
-
   public:
 
     Pipeline(
@@ -101,12 +119,12 @@ namespace traffic_manager {
         std::vector<float> lateral_PID_parameters,
         float urban_target_velocity,
         float highway_target_velocity,
-        std::vector<carla::SharedPtr<carla::client::Actor>> &actor_list,
+        std::vector<ActorPtr> &actor_list,
         InMemoryMap &local_map,
-        carla::client::Client &client_connection,
-        carla::client::World &world,
-        carla::client::DebugHelper &debug_helper,
-        int pipeline_width);
+        cc::Client &client_connection,
+        cc::World &world,
+        cc::DebugHelper &debug_helper,
+        uint pipeline_width);
 
     void Start();
 

@@ -1,6 +1,5 @@
 #pragma once
 
-#include <array>
 #include <vector>
 
 #include "carla/client/Map.h"
@@ -16,23 +15,28 @@ namespace traffic_manager {
 >>>>>>> e2c8e19611819ecbb7026355674ba94b985ad488
   class CarlaDataAccessLayer {
 
-    private:
+  private:
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 =======
       /// Pointer to carla's map object
 >>>>>>> e2c8e19611819ecbb7026355674ba94b985ad488
       carla::SharedPtr<carla::client::Map> world_map;
+=======
+    /// Pointer to carla's map object
+    carla::SharedPtr<carla::client::Map> world_map;
+>>>>>>> b66f4b71d9abdefe0a53431f4ab6605b5e11e09b
 
-    public:
+  public:
 
-      CarlaDataAccessLayer(carla::SharedPtr<carla::client::Map> world_map);
-      
-      ~CarlaDataAccessLayer();
+    CarlaDataAccessLayer(carla::SharedPtr<carla::client::Map> world_map);
 
-      /// Retrieves list of topology segments from the simulator
-      using WaypointPtr = carla::SharedPtr<carla::client::Waypoint>;
-      std::vector<std::pair<WaypointPtr, WaypointPtr>> GetTopology() const;
+    ~CarlaDataAccessLayer();
+
+    /// Retrieves list of topology segments from the simulator
+    using WaypointPtr = carla::SharedPtr<carla::client::Waypoint>;
+    std::vector<std::pair<WaypointPtr, WaypointPtr>> GetTopology() const;
 
   };
 

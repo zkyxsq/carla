@@ -8,21 +8,23 @@
 #include "boost/stacktrace.hpp"
 #include "carla/client/Client.h"
 #include "carla/Logging.h"
+#include "carla/Memory.h"
 
 #include "CarlaDataAccessLayer.h"
 #include "InMemoryMap.h"
 #include "Pipeline.h"
 
 namespace cc = carla::client;
+using Actor = carla::SharedPtr<cc::Actor>;
 
-void run_pipeline(cc::World &world, cc::Client &client_conn, int target_traffic_amount);
+void run_pipeline(cc::World &world, cc::Client &client_conn, uint target_traffic_amount);
 
 std::atomic<bool> quit(false);
 void got_signal(int) {
   quit.store(true);
 }
 
-std::vector<carla::SharedPtr<cc::Actor>> *global_actor_list;
+std::vector<Actor> *global_actor_list;
 void handler() {
 
   if (!quit.load()) {
@@ -47,7 +49,7 @@ int main(int argc, char *argv[]) {
   auto client_conn = cc::Client("localhost", 2000);
   auto world = client_conn.GetWorld();
 
-  int target_traffic_amount = 0;
+  uint target_traffic_amount = 0u;
   if (argc == 3 && std::string(argv[1]) == "-n") {
     try {
       target_traffic_amount = std::stoi(argv[2]);
@@ -61,10 +63,7 @@ int main(int argc, char *argv[]) {
   return 0;
 }
 
-void run_pipeline(
-    cc::World &world,
-    cc::Client &client_conn,
-    int target_traffic_amount) {
+void run_pipeline(cc::World &world, cc::Client &client_conn, uint target_traffic_amount) {
 
   struct sigaction sa;
   memset(&sa, 0, sizeof(sa));
@@ -80,7 +79,8 @@ void run_pipeline(
   local_map->SetUp(1.0);
 
   auto core_count = traffic_manager::read_core_count();
-  auto registered_actors = traffic_manager::spawn_traffic(world, core_count, target_traffic_amount);
+  auto registered_actors = traffic_manager::spawn_traffic(
+    client_conn, world, core_count, target_traffic_amount);
   global_actor_list = &registered_actors;
 
   traffic_manager::Pipeline pipeline(
@@ -105,11 +105,7 @@ void run_pipeline(
 
   pipeline.Stop();
 
-  for (auto actor: registered_actors) {
-    if (actor != nullptr && actor->IsAlive()) {
-      actor->Destroy();
-    }
-  }
+  traffic_manager::destroy_traffic(registered_actors, client_conn);
 
   carla::log_info("\nTrafficManager stopped by user\n");
 }
