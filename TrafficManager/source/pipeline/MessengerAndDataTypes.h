@@ -16,7 +16,7 @@ namespace traffic_manager {
 
   /// Alias for waypoint buffer used in localization stage
   using Buffer = std::deque<std::shared_ptr<SimpleWaypoint>>;
-  /// Alias used for list of buffers in localization stage
+  /// Alias used for the list of buffers in localization stage
   using BufferList = std::vector<Buffer>;
 
   /// Data types
@@ -30,7 +30,7 @@ namespace traffic_manager {
 
   /// Type of data sent by motion planner stage to batch control stage
   struct PlannerToControlData {
-    carla::rpc::ActorId actor_id;
+    carla::ActorId actor_id;
     float throttle;
     float brake;
     float steer;

@@ -14,7 +14,8 @@
 
 namespace traffic_manager {
 
-  namespace chr = std::chrono;
+namespace chr = std::chrono;
+namespace cc = carla::client;
 
   /// This class receives actuation signals (throttle, brake, steer)
   /// from MotionPlannerStage class and communicates these signals to
@@ -27,22 +28,22 @@ namespace traffic_manager {
     int messenger_state;
     /// Pointer to frame received from MotionPlanner
     std::shared_ptr<PlannerToControlFrame> data_frame;
-    /// Pointer to messenger from MotionPlanner
+    /// Pointer to a messenger from MotionPlanner
     std::shared_ptr<PlannerToControlMessenger> messenger;
     /// Variable used to measure system throughput
     uint frame_count = 0;
     /// Reference to carla client connection object
-    carla::client::Client &carla_client;
+    cc::Client &carla_client;
     /// Array to hold command batch
     std::shared_ptr<std::vector<carla::rpc::Command>> commands;
-    /// Object used to track time for measuring throughput
+    /// The Object used to track time for measuring throughput
     chr::time_point<chr::_V2::system_clock, chr::nanoseconds> last_update_instance;
 
   public:
 
     BatchControlStage(
         std::shared_ptr<PlannerToControlMessenger> messenger,
-        carla::client::Client &carla_client,
+        cc::Client &carla_client,
         uint number_of_vehicles,
         uint pool_size);
     ~BatchControlStage();

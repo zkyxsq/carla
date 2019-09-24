@@ -32,14 +32,14 @@ namespace cr = carla::rpc;
   /// Function to read hardware concurrency
   uint read_core_count();
 
-  /// Function to spawn specified number of vehicles
+  /// Function to spawn a specified number of vehicles
   std::vector<ActorPtr> spawn_traffic(
       cc::Client &client,
       cc::World &world,
       uint core_count,
       uint target_amount);
 
-  /// Detroy actors
+  /// Destroy actors
   void destroy_traffic(
       std::vector<ActorPtr> &actor_list,
       cc::Client &client);
@@ -59,6 +59,7 @@ namespace cr = carla::rpc;
     std::vector<float> longitudinal_highway_PID_parameters;
     std::vector<float> lateral_PID_parameters;
 <<<<<<< HEAD
+<<<<<<< HEAD
     int pipeline_width;
     float highway_target_velocity;
     float urban_target_velocity;
@@ -66,6 +67,9 @@ namespace cr = carla::rpc;
 
 =======
     /// Number of worker threads per stage
+=======
+    /// Number of working threads per stage
+>>>>>>> fb725b08c5da3f19cceb243f34aa19305b4c4361
     uint pipeline_width;
     /// Target velocities
     float highway_target_velocity;
