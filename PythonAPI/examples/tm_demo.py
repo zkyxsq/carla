@@ -65,6 +65,14 @@ def main():
     try:
         traffic_manager = None
         world = client.get_world()
+        weather = carla.WeatherParameters(
+            cloudyness=50.0,
+            sun_altitude_angle=70.0)
+        world.set_weather(weather)
+        #settings = world.get_settings()
+        #settings.no_rendering_mode = True
+        #world.apply_settings(settings)
+
         blueprints = world.get_blueprint_library().filter(args.filter)
 
         if args.safe:

@@ -84,4 +84,8 @@ namespace traffic_manager {
     return waypoint->IsJunction();
   }
 
+  bool SimpleWaypoint::CheckIntersection() const {
+    return (next_waypoints.size() > 1);
+  }
+
 }

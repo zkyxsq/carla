@@ -7,8 +7,8 @@ namespace LocalizationConstants {
   static const float MINIMUM_HORIZON_LENGTH = 25.0f;
   static const float TARGET_WAYPOINT_TIME_HORIZON = 0.5f;
   static const float TARGET_WAYPOINT_HORIZON_LENGTH = 2.0f;
-  static const float MINIMUM_JUNCTION_LOOK_AHEAD = 3.0f;
-  static const float HIGHWAY_SPEED = 50 / 3.6f;
+  static const float MINIMUM_JUNCTION_LOOK_AHEAD = 6.0f;
+  static const float HIGHWAY_SPEED = 50.0f;
 }
   using namespace LocalizationConstants;
 
@@ -43,6 +43,15 @@ namespace LocalizationConstants {
     traffic_light_messenger_state = traffic_light_messenger->GetState() - 1;
     // Initializing the registered actors container state.
     registered_actors_state = -1;
+
+    // Initialize all to false
+    for (uint i = 0u; i < actor_list.size(); ++i) {
+      
+      Actor vehicle = actor_list.at(i);
+      ActorId actor_id = vehicle->GetId();
+      Approached[actor_id] = false;
+      final_points[actor_id] = nullptr;
+      }
   }
 
   LocalizationStage::~LocalizationStage() {}
@@ -170,7 +179,8 @@ namespace LocalizationConstants {
       }
 
       bool approaching_junction = false;
-      if (look_ahead_point->CheckJunction() && !(waypoint_buffer.front()->CheckJunction())) {
+      if (waypoint_buffer.front()->CheckJunction() ||
+          (look_ahead_point->CheckJunction() && !(waypoint_buffer.front()->CheckJunction()))) {
         if (speed_limit > HIGHWAY_SPEED) {
           for (uint j = 0u; (j < look_ahead_index) && !approaching_junction; ++j) {
             SimpleWaypointPtr swp = waypoint_buffer.at(j);
@@ -183,6 +193,105 @@ namespace LocalizationConstants {
         }
       }
 
+      // Reset the variable
+      if (!approaching_junction){
+        // No need to check if the actor exists as if it doesn't, it will be added
+        Approached[actor_id] = false;
+        final_points[actor_id] = nullptr;
+      }
+      
+      // If it's coming (and 2 more ifs), extend the buffer until passed the junction
+      if (approaching_junction &&
+         (Approached.find(actor_id) != Approached.end()) &&
+          Approached[actor_id] == false){  
+
+        Approached[actor_id] = true;
+
+        // Class change from Actor to Vehicle, to extract the length
+        auto Vehicle = boost::static_pointer_cast<cc::Vehicle>(vehicle);
+        // Length of the car
+        float length = Vehicle->GetBoundingBox().extent.x;
+        // First Waypoint after the junction
+        SimpleWaypointPtr safe_point;
+        // First Waypoint after the junction
+        SimpleWaypointPtr final_point;
+        // Safe space after the junction
+        float safe_distance = 2*length + parameters.GetDistanceToLeadingVehicle(vehicle);
+        // Multiple junction detection. TODO: check for false intersections
+        bool extend_buffer = true;
+
+        while(extend_buffer == true){
+          extend_buffer = false;
+
+          // Case 1) The buffer has to be extended (It stops at the intersection)
+          if (waypoint_buffer.back()->CheckJunction()){
+
+            // Keep adding waypoints until the junction is over.
+            while (waypoint_buffer.back()->CheckJunction()) {
+
+              // Record the last point as a safe one and safe it
+              safe_point = waypoint_buffer.back()->GetNextWaypoint().front();
+              waypoint_buffer.push_back(safe_point);
+            }
+
+            final_point = waypoint_buffer.back()->GetNextWaypoint().front();
+            // Extend the buffer a little more. Keep adding waypoints
+            // until the actor is able to fit after the junction.
+            while(final_point->Distance(safe_point->GetLocation()) < safe_distance){
+              if(waypoint_buffer.back()->CheckJunction()){
+                extend_buffer = true;
+                break;
+              }
+              waypoint_buffer.push_back(final_point);
+              final_point = waypoint_buffer.back()->GetNextWaypoint().front();
+            }
+          }
+
+          // Case 2) The buffer already crosses the junction.
+          // Check if it is long enough.
+          else {
+
+            // Backwards search for the safe point 
+            for (auto j = waypoint_buffer.size(); j > 1; --j){
+              if (waypoint_buffer.at(j-1)->CheckJunction()){
+                safe_point = waypoint_buffer.at(j);
+                break;
+              }
+            }    
+
+            // Keep adding waypoints until the actor has enough space
+            if (safe_point->Distance(waypoint_buffer.back()->GetLocation()) < safe_distance){
+
+              final_point = waypoint_buffer.back()->GetNextWaypoint().front();
+              while (safe_point->Distance(final_point->GetLocation()) < safe_distance){
+                if(waypoint_buffer.back()->CheckJunction()){
+                  extend_buffer = true;
+                  break;
+                }
+                waypoint_buffer.push_back(final_point);
+                final_point = waypoint_buffer.back()->GetNextWaypoint().front();
+              }
+            }
+
+            // Backwards search for the final point
+            else{
+              final_point = waypoint_buffer.back();
+              for (auto j = waypoint_buffer.size(); j > 1; --j){
+                if (safe_point->Distance(waypoint_buffer.at(j-1)->GetLocation()) < safe_distance){
+                  final_point = waypoint_buffer.at(j);
+                  break;
+                }
+              }
+            }
+          }
+        }
+        if (final_point == nullptr){
+          std::cout << "Final point is nullptr, something failed\n";
+        }
+        final_points[actor_id] = final_point;
+        
+        
+      }
       // Editing output frames.
       LocalizationToPlannerData &planner_message = current_planner_frame->at(i);
       planner_message.actor = vehicle;
@@ -196,6 +305,8 @@ namespace LocalizationConstants {
         LocalizationToCollisionData &collision_message = current_collision_frame->at(i);
         collision_message.actor = vehicle;
         collision_message.buffer = waypoint_buffer;
+        collision_message.approaching_true_junction = approaching_junction;
+        collision_message.final_bbox_point = final_points[actor_id];   
       }
 
       LocalizationToTrafficLightData &traffic_light_message = current_traffic_light_frame->at(i);

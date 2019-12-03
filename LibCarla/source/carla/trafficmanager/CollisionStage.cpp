@@ -121,12 +121,11 @@ namespace CollisionStageConstants {
               < std::pow(MAX_COLLISION_RADIUS, 2)) &&
               (std::abs(ego_location.z - other_location.z) < VERTICAL_OVERLAP_THRESHOLD)) {
 
-            debug_helper.DrawLine(
+            /*debug_helper.DrawLine(
               ego_location + cg::Location(0, 0, 2),
-              other_location + cg::Location(0, 0, 2), 0.2,
-              {255u, 0u, 0u}, 0.1
-            );
-
+              other_location + cg::Location(0, 0, 2), 0.2f,
+              {255u, 0u, 0u}, 0.1f
+            );*/
             if (parameters.GetCollisionDetection(ego_actor, actor) &&
                 NegotiateCollision(ego_actor, actor)) {
 
@@ -285,18 +284,39 @@ namespace CollisionStageConstants {
       SimpleWaypointPtr current_point = waypoint_buffer.at(boundary_start_index);
 
       auto vehicle_reference = boost::static_pointer_cast<cc::Vehicle>(actor);
-      // At non-signalized junctions, we extend the boundary across the junction
-      // and in all other situations, boundary length is velocity-dependent.
+      // Extend the bounday box a certain length
       bool reached_distance = false;
-      for (uint j = boundary_start_index; !reached_distance && (j < waypoint_buffer.size()); ++j) {
+      // At intersections, extend it across all the junctions
+      bool reached_safe_point = false;
+      // True when a junction approaches
+      bool approaching_junction = localization_frame->at(vehicle_id_to_index.at(actor->GetId())).approaching_true_junction;
+      // Final Waypoint of the bounding box at intersections
+      SimpleWaypointPtr final_point = localization_frame->at(vehicle_id_to_index.at(actor->GetId())).final_bbox_point;
 
+      for (uint j = boundary_start_index; (!reached_distance || !reached_safe_point)
+           && (j < waypoint_buffer.size()); ++j) {
+        
+        // Keep extending until the junction is over
+        if (approaching_junction){
+          if (waypoint_buffer.at(j) == final_point){
+            //debug_helper.DrawPoint(final_point->GetLocation(),0.2f,{255u, 255u, 0u},0.05f, true);
+            reached_safe_point = true;
+          }
+        }
+        
+        // Keep extending the bounding box until a certain distance has been reached
         if (boundary_start->DistanceSquared(current_point) > std::pow(bbox_extension, 2)) {
           reached_distance = true;
+          if (!approaching_junction){
+            reached_safe_point = true;
+          }
+
         }
 
+        // Extend the bbox every BOUNDARY_EDGE_LENGTH, and at the beginnign and end
         if (boundary_end == nullptr ||
             boundary_end->DistanceSquared(current_point) > std::pow(BOUNDARY_EDGE_LENGTH, 2) ||
-            reached_distance) {
+            (reached_distance && reached_safe_point)) {
 
           cg::Vector3D heading_vector = current_point->GetForwardVector();
           cg::Location location = current_point->GetLocation();
@@ -308,6 +328,13 @@ namespace CollisionStageConstants {
           right_boundary.push_back(location + cg::Location(-1 * scaled_perpendicular));
 
           boundary_end = current_point;
+
+          // Debugging, shows these points
+          /*if (current_point->CheckJunction()){
+            debug_helper.DrawPoint(current_point->GetLocation(),0.1f,{0u, 0u, 255u},0.05f, true);
+          }else{
+            debug_helper.DrawPoint(current_point->GetLocation(),0.1f,{0u, 255u, 255u},0.05f, true);
+          }*/
         }
 
         current_point = waypoint_buffer.at(j);
@@ -406,7 +433,7 @@ namespace CollisionStageConstants {
       debug_helper.DrawLine(
           boundary[i] + cg::Location(0, 0, 1),
           boundary[(i + 1) % boundary.size()] + cg::Location(0, 0, 1),
-          0.1f, {255u, 0u, 0u}, 0.1f);
+          0.1f, {255u, 0u, 0u}, 0.05f);
     }
   }
 }

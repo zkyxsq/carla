@@ -42,6 +42,8 @@ namespace cc = carla::client;
   struct LocalizationToCollisionData {
     carla::SharedPtr<cc::Actor> actor;
     Buffer buffer;
+    bool approaching_true_junction; 
+    std::shared_ptr<SimpleWaypoint> final_bbox_point; 
   };
 
   /// Type of data sent by the collision stage to the motion planner stage.
