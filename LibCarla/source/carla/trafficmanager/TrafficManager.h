@@ -41,6 +41,7 @@ namespace cc = carla::client;
     std::vector<float> longitudinal_PID_parameters;
     std::vector<float> longitudinal_highway_PID_parameters;
     std::vector<float> lateral_PID_parameters;
+    std::vector<float> lateral_highway_PID_parameters;
     /// Set of all actors registered with traffic manager.
     AtomicActorSet registered_actors;
     /// Pointer to local map cache.
@@ -75,7 +76,8 @@ namespace cc = carla::client;
     TrafficManager(
         std::vector<float> longitudinal_PID_parameters,
         std::vector<float> longitudinal_highway_PID_parameters,
-        std::vector<float> lateral_PID_parameters,
+        std::vector<float> lateral_PID_parameters,  
+        std::vector<float> lateral_highway_PID_parameters,
         float perc_decrease_from_limit,
         cc::Client &client_connection);
 

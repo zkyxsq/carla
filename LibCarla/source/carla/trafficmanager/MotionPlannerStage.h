@@ -55,8 +55,9 @@ namespace cc = carla::client;
     Parameters &parameters;
     /// Configuration parameters for the PID controller.
     std::vector<float> longitudinal_parameters;
-    std::vector<float> highway_longitudinal_parameters;
     std::vector<float> lateral_parameters;
+    std::vector<float> highway_longitudinal_parameters;
+    std::vector<float> highway_lateral_parameters;
     /// Controller object.
     PIDController controller;
     /// Number of vehicles registered with the traffic manager.
@@ -71,8 +72,9 @@ namespace cc = carla::client;
         std::shared_ptr<PlannerToControlMessenger> control_messenger,
         Parameters &parameters,
         std::vector<float> longitudinal_parameters,
+        std::vector<float> lateral_parameters,
         std::vector<float> highway_longitudinal_parameters,
-        std::vector<float> lateral_parameters);
+        std::vector<float> highway_lateral_parameters);
 
     ~MotionPlannerStage();
 

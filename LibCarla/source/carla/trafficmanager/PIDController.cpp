@@ -1,4 +1,5 @@
 #include "PIDController.h"
+#include "iostream"
 
 namespace traffic_manager {
 
@@ -16,14 +17,16 @@ namespace PIDControllerConstants {
       float current_velocity,
       float target_velocity,
       float angular_deviation,
+      float distance,
       TimeInstance current_time) {
 
     traffic_manager::StateEntry current_state = {
-      angular_deviation,
+      angular_deviation, distance,
       (current_velocity - target_velocity) / target_velocity,
       current_time,
       0.0f,
-      0.0f
+      0.0f,
+      0.0f,
     };
 
     // Calculating dt for 'D' and 'I' controller components.
@@ -32,6 +35,7 @@ namespace PIDControllerConstants {
 
     // Calculating integrals.
     current_state.deviation_integral = angular_deviation * dt + previous_state.deviation_integral;
+    current_state.distance_integral = distance * dt + previous_state.distance_integral;
     current_state.velocity_integral = dt * current_state.velocity + previous_state.velocity_integral;
 
     return current_state;
@@ -55,6 +59,7 @@ namespace PIDControllerConstants {
 
     float throttle;
     float brake;
+    
 
     if (expr_v < 0.0f) {
       throttle = std::min(std::abs(expr_v), MAX_THROTTLE);
@@ -69,6 +74,19 @@ namespace PIDControllerConstants {
         lateral_parameters[1] * present_state.deviation_integral +
         lateral_parameters[2] * (present_state.deviation -
         previous_state.deviation) / dt;
+    
+
+    /*float steer = lateral_parameters[0] * present_state.distance +
+        lateral_parameters[1] * present_state.distance_integral +
+        lateral_parameters[2] * (present_state.distance -
+        previous_state.distance) / dt;
+
+        std::cout << "--------------------------------------\n";
+        std::cout << steer << "\n";
+        std::cout << lateral_parameters[0] * present_state.distance << "\n";
+        std::cout << lateral_parameters[1] * present_state.distance_integral << "\n";
+        std::cout << lateral_parameters[2] * (present_state.distance - previous_state.distance) / dt << "\n";
+    */
 
     steer = std::max(-1.0f, std::min(steer, 1.0f));
 

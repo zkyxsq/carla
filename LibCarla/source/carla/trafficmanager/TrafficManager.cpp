@@ -6,6 +6,7 @@ namespace traffic_manager {
       std::vector<float> longitudinal_PID_parameters,
       std::vector<float> longitudinal_highway_PID_parameters,
       std::vector<float> lateral_PID_parameters,
+      std::vector<float> lateral_highway_PID_parameters,
       float perc_decrease_from_limit,
       cc::Client &client_connection)
     : longitudinal_PID_parameters(longitudinal_PID_parameters),
@@ -53,7 +54,8 @@ namespace traffic_manager {
         parameters,
         longitudinal_PID_parameters,
         longitudinal_highway_PID_parameters,
-        lateral_PID_parameters);
+        lateral_PID_parameters,
+        lateral_highway_PID_parameters);
 
     control_stage = std::make_unique<BatchControlStage>(
         planner_control_messenger, client_connection);
@@ -73,12 +75,13 @@ namespace traffic_manager {
     if (singleton_pointer == nullptr) {
 
       std::vector<float> longitudinal_param = {0.1f, 0.15f, 0.01f};
-      std::vector<float> longitudinal_highway_param = {5.0f, 0.09f, 0.01f};
+      std::vector<float> longitudinal_highway_param = {5.0f, 0.1f, 0.01f};
       std::vector<float> lateral_param = {10.0f, 0.0f, 0.1f};
-      float perc_decrease_from_limit = 20.0f;
+      std::vector<float> lateral_highway_param = {3.0f, 0.0f, 20.0f};
+      float perc_decrease_from_limit = 0.0f;
 
       TrafficManager* tm_ptr = new TrafficManager(
-        longitudinal_param, longitudinal_highway_param, lateral_param,
+        longitudinal_param, longitudinal_highway_param, lateral_param, lateral_highway_param,
         perc_decrease_from_limit, client_connection
       );
 

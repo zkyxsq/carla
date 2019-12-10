@@ -54,6 +54,14 @@ def main():
         metavar='PATTERN',
         default='vehicle.*',
         help='vehicles filter (default: "vehicle.*")')
+    argparser.add_argument(
+        '--CarlaCola',
+        action='store_true',
+        help='spawn only CarlaCola vehicles')
+    argparser.add_argument(
+        '--motocycle',
+        action='store_true',
+        help='spawn only motocicles')
     args = argparser.parse_args()
 
     logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
@@ -69,9 +77,6 @@ def main():
             cloudyness=50.0,
             sun_altitude_angle=70.0)
         world.set_weather(weather)
-        #settings = world.get_settings()
-        #settings.no_rendering_mode = True
-        #world.apply_settings(settings)
 
         blueprints = world.get_blueprint_library().filter(args.filter)
 
@@ -79,6 +84,13 @@ def main():
             blueprints = [x for x in blueprints if int(x.get_attribute('number_of_wheels')) == 4]
             blueprints = [x for x in blueprints if not x.id.endswith('isetta')]
             blueprints = [x for x in blueprints if not x.id.endswith('carlacola')]
+
+        if args.CarlaCola:
+            blueprints = [x for x in blueprints if  x.id.endswith('carlacola')]
+
+        if args.motocycle:
+            blueprints = [x for x in blueprints if int(x.get_attribute('number_of_wheels')) == 2]
+        
 
         spawn_points = world.get_map().get_spawn_points()
         number_of_spawn_points = len(spawn_points)
@@ -122,15 +134,16 @@ def main():
         time.sleep(1)
         for v in vehicle_list:
             if (v.id % 2 == 0):
-                traffic_manager.set_vehicle_target_velocity(v, 15.0/3.6)
                 traffic_manager.set_distance_to_leading_vehicle(v, 3)
             else:
                 traffic_manager.set_distance_to_leading_vehicle(v, 6)
-                pass
 
-        time.sleep(10)
-        for v in vehicle_list:
-            traffic_manager.force_lane_change(v, True)
+        time.sleep(6)
+        while True:
+            time.sleep(7)
+            print("Lane Change!")
+            for v in vehicle_list:
+                traffic_manager.force_lane_change(v, True)
 
 
         while True:

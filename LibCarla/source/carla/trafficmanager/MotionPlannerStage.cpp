@@ -9,6 +9,7 @@ namespace PlannerConstants {
   static const std::vector<float> URBAN_LONGITUDINAL_DEFAULTS = {0.1f, 0.15f, 0.01f};
   static const std::vector<float> HIGHWAY_LONGITUDINAL_DEFAULTS = {5.0f, 0.1f, 0.01f};
   static const std::vector<float> LATERAL_DEFAULTS = {10.0f, 0.0f, 0.1f};
+  static const std::vector<float> HIGHWAY_LATERAL_DEFAULTS = {3.0f, 0.0f, 20.0f};
 }
   using namespace PlannerConstants;
 
@@ -19,16 +20,18 @@ namespace PlannerConstants {
       std::shared_ptr<PlannerToControlMessenger> control_messenger,
       Parameters &parameters,
       std::vector<float> longitudinal_parameters = URBAN_LONGITUDINAL_DEFAULTS,
+      std::vector<float> lateral_parameters = LATERAL_DEFAULTS,
       std::vector<float> highway_longitudinal_parameters = HIGHWAY_LONGITUDINAL_DEFAULTS,
-      std::vector<float> lateral_parameters = LATERAL_DEFAULTS)
+      std::vector<float> highway_lateral_parameters = HIGHWAY_LATERAL_DEFAULTS)
     : localization_messenger(localization_messenger),
       collision_messenger(collision_messenger),
       traffic_light_messenger(traffic_light_messenger),
       control_messenger(control_messenger),
       parameters(parameters),
       longitudinal_parameters(longitudinal_parameters),
+      lateral_parameters(lateral_parameters),
       highway_longitudinal_parameters(highway_longitudinal_parameters),
-      lateral_parameters(lateral_parameters) {
+      highway_lateral_parameters(highway_lateral_parameters) {
 
     // Initializing the output frame selector.
     frame_selector = true;
@@ -58,6 +61,7 @@ namespace PlannerConstants {
       LocalizationToPlannerData &localization_data = localization_frame->at(i);
       Actor actor = localization_data.actor;
       float current_deviation = localization_data.deviation;
+      float current_distance = localization_data.distance;
       ActorId actor_id = actor->GetId();
 
       auto vehicle = boost::static_pointer_cast<cc::Vehicle>(actor);
@@ -65,7 +69,7 @@ namespace PlannerConstants {
       auto current_time = chr::system_clock::now();
 
       if (pid_state_map.find(actor_id) == pid_state_map.end()) {
-        auto initial_state = StateEntry{0.0f, 0.0f, chr::system_clock::now(), 0.0f, 0.0f};
+        auto initial_state = StateEntry{0.0f, 0.0f, 0.0f, chr::system_clock::now(), 0.0f, 0.0f, 0.0f};
         pid_state_map.insert({actor_id, initial_state});
       }
 
@@ -80,6 +84,7 @@ namespace PlannerConstants {
 
       if (speed_limit > HIGHWAY_SPEED) {
         longitudinal_parameters = highway_longitudinal_parameters;
+        lateral_parameters = highway_lateral_parameters;
       }
 
       // State update for vehicle.
@@ -88,6 +93,7 @@ namespace PlannerConstants {
           current_velocity,
           dynamic_target_velocity,
           current_deviation,
+          current_distance,
           current_time);
 
       // Controller actuation.

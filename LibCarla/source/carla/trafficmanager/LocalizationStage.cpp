@@ -160,6 +160,24 @@ namespace LocalizationConstants {
         dot_product *= -1;
       }
 
+      /* Calculate the distance between the car and the trajectory (TODO: Use in the PID)
+      auto Vehicle = boost::static_pointer_cast<cc::Vehicle>(vehicle);
+      // Calculate the parameters of the line
+      cg::Vector3D velocity = Vehicle->GetVelocity();
+      velocity.z = 0;
+      cg::Location trajectory_location_ini = waypoint_buffer.front()->GetLocation();
+      trajectory_location_ini.z = 0;
+      cg::Location trajectory_location_fin = target_location;
+      trajectory_location_fin.z = 0;
+      cg::Vector3D trajectory_vector = trajectory_location_fin - trajectory_location_ini;
+      float a = trajectory_vector.x;
+      float b = -trajectory_vector.y;
+      float c = b*trajectory_location_ini.y - a*trajectory_location_ini.x;
+      // Distance from the vehicle to the desired trajectory
+      float distance = (a*vehicle_location.x + b*vehicle_location.y + c) / 
+                        std::sqrt(std::pow(a,2.0f)+std::pow(b,2.0f));*/
+      float distance = 0; // TODO: use in PID
+
       // Filtering out false junctions on highways.
       // On highways, if there is only one possible path and the section is
       // marked as intersection, ignore it.
@@ -207,8 +225,6 @@ namespace LocalizationConstants {
 
         Approached[actor_id] = true;
 
-        // Class change from Actor to Vehicle, to extract the length
-        auto Vehicle = boost::static_pointer_cast<cc::Vehicle>(vehicle);
         // Length of the car
         float length = Vehicle->GetBoundingBox().extent.x;
         // First Waypoint after the junction
@@ -296,6 +312,7 @@ namespace LocalizationConstants {
       LocalizationToPlannerData &planner_message = current_planner_frame->at(i);
       planner_message.actor = vehicle;
       planner_message.deviation = dot_product;
+      planner_message.distance = distance;
       planner_message.approaching_true_junction = approaching_junction;
 
       // Reading current messenger state of the collision stage before modifying it's frame.
