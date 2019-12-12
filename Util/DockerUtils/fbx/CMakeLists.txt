@@ -12,10 +12,10 @@ set(CMAKE_GENERATOR_PLATFORM x64)
 
 # include folders
 include_directories(src)
-include_directories(include)
+include_directories(fbx_install/include)
 
 # library folders
-link_directories(lib/gcc/x64/release)
+link_directories(fbx_install/lib/gcc/x64/release)
 
 # sources
 file(GLOB SOURCES "src/*.cpp")
