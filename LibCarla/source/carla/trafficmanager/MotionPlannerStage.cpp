@@ -9,7 +9,7 @@ namespace PlannerConstants {
   static const std::vector<float> URBAN_LONGITUDINAL_DEFAULTS = {0.1f, 0.15f, 0.01f};
   static const std::vector<float> HIGHWAY_LONGITUDINAL_DEFAULTS = {5.0f, 0.1f, 0.01f};
   static const std::vector<float> LATERAL_DEFAULTS = {10.0f, 0.0f, 0.1f};
-  static const std::vector<float> HIGHWAY_LATERAL_DEFAULTS = {3.0f, 0.0f, 20.0f};
+  static const std::vector<float> HIGHWAY_LATERAL_DEFAULTS = {5.0f, 0.0f, 20.0f};
 }
   using namespace PlannerConstants;
 

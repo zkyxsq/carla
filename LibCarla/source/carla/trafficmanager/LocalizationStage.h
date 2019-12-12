@@ -90,6 +90,9 @@ namespace cc = carla::client;
     std::map<carla::ActorId, SimpleWaypointPtr> final_points;
     /// A simple method used to draw waypoint buffer ahead of a vehicle.
     void DrawBuffer(Buffer &buffer);
+    // When near an intersection, extends the buffer throughout all the intersection
+    // Returns a SimpleWaypointPtr, which is the end of the collision bounding box
+    SimpleWaypointPtr ExtendBufferAtJunctions(Actor &vehicle, Buffer &waypoint_buffer);
 
   public:
 

@@ -299,18 +299,17 @@ namespace CollisionStageConstants {
         // Keep extending until the junction is over
         if (approaching_junction){
           if (waypoint_buffer.at(j) == final_point){
-            //debug_helper.DrawPoint(final_point->GetLocation(),0.2f,{255u, 255u, 0u},0.05f, true);
             reached_safe_point = true;
           }
         }
         
         // Keep extending the bounding box until a certain distance has been reached
-        if (boundary_start->DistanceSquared(current_point) > std::pow(bbox_extension, 2)) {
+        if (!reached_distance && boundary_start->DistanceSquared(current_point) > std::pow(bbox_extension, 2)) {
           reached_distance = true;
           if (!approaching_junction){
             reached_safe_point = true;
           }
-
+          
         }
 
         // Extend the bbox every BOUNDARY_EDGE_LENGTH, and at the beginnign and end
@@ -331,15 +330,15 @@ namespace CollisionStageConstants {
 
           // Debugging, shows these points
           /*if (current_point->CheckJunction()){
-            debug_helper.DrawPoint(current_point->GetLocation(),0.1f,{0u, 0u, 255u},0.05f, true);
+            debug_helper.DrawPoint(current_point->GetLocation(),0.12f,{0u, 0u, 255u},0.03f, true);
           }else{
-            debug_helper.DrawPoint(current_point->GetLocation(),0.1f,{0u, 255u, 255u},0.05f, true);
+            debug_helper.DrawPoint(current_point->GetLocation(),0.12f,{0u, 255u, 255u},0.03f, true);
           }*/
         }
 
         current_point = waypoint_buffer.at(j);
       }
-
+   
       // Connecting the geodesic path boundary with the vehicle bounding box.
       LocationList geodesic_boundary;
       // Reversing right boundary to construct clockwise (left-hand system)
@@ -430,10 +429,10 @@ namespace CollisionStageConstants {
 
   void CollisionStage::DrawBoundary(const LocationList &boundary) const {
     for (uint i = 0u; i < boundary.size(); ++i) {
-      debug_helper.DrawLine(
+      /*debug_helper.DrawLine(
           boundary[i] + cg::Location(0, 0, 1),
           boundary[(i + 1) % boundary.size()] + cg::Location(0, 0, 1),
           0.1f, {255u, 0u, 0u}, 0.05f);
-    }
+    */}
   }
 }

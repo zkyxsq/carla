@@ -74,11 +74,11 @@ namespace traffic_manager {
 
     if (singleton_pointer == nullptr) {
 
-      std::vector<float> longitudinal_param = {0.1f, 0.15f, 0.01f};
-      std::vector<float> longitudinal_highway_param = {5.0f, 0.1f, 0.01f};
+      std::vector<float> longitudinal_param = {2.0f, 0.15f, 0.01f};
+      std::vector<float> longitudinal_highway_param = {4.0f, 0.15f, 0.01f};
       std::vector<float> lateral_param = {10.0f, 0.0f, 0.1f};
-      std::vector<float> lateral_highway_param = {3.0f, 0.0f, 20.0f};
-      float perc_decrease_from_limit = 0.0f;
+      std::vector<float> lateral_highway_param = {6.0f, 0.0f, 0.3f};
+      float perc_decrease_from_limit = 30.0f;
 
       TrafficManager* tm_ptr = new TrafficManager(
         longitudinal_param, longitudinal_highway_param, lateral_param, lateral_highway_param,
