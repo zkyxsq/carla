@@ -1,8 +1,16 @@
+// Copyright (c) 2019 Computer Vision Center (CVC) at the Universitat Autonoma
+// de Barcelona (UAB).
+//
+// This work is licensed under the terms of the MIT license.
+// For a copy, see <https://opensource.org/licenses/MIT>.
+
 #include "PipelineStage.h"
 
+namespace carla {
 namespace traffic_manager {
 
-  PipelineStage::PipelineStage() {
+  PipelineStage::PipelineStage(std::string stage_name)
+    : performance_diagnostics(PerformanceDiagnostics(stage_name)) {
 
     run_stage.store(true);
     run_receiver.store(true);
@@ -53,6 +61,7 @@ namespace traffic_manager {
   void PipelineStage::ActionThreadManager() {
 
     while (run_stage.load()) {
+      performance_diagnostics.RegisterUpdate();
 
       std::unique_lock<std::mutex> lock(thread_coordination_mutex);
 
@@ -97,4 +106,5 @@ namespace traffic_manager {
     }
   }
 
+} // namespace traffic_manager
 }

@@ -1,12 +1,23 @@
+// Copyright (c) 2019 Computer Vision Center (CVC) at the Universitat Autonoma
+// de Barcelona (UAB).
+//
+// This work is licensed under the terms of the MIT license.
+// For a copy, see <https://opensource.org/licenses/MIT>.
+
 #include "PIDController.h"
 #include "iostream"
+#include <algorithm>
 
+namespace carla {
 namespace traffic_manager {
 
 namespace PIDControllerConstants {
-  const float MAX_THROTTLE = 0.8f;
+
+  const float MAX_THROTTLE = 0.7f;
   const float MAX_BRAKE = 1.0f;
-}
+
+} // namespace PIDControllerConstants
+
   using namespace PIDControllerConstants;
 
   PIDController::PIDController() {}
@@ -26,12 +37,12 @@ namespace PIDControllerConstants {
       current_time,
       0.0f,
       0.0f,
-      0.0f,
+      0.0f
     };
 
     // Calculating dt for 'D' and 'I' controller components.
-    chr::duration<float> duration = current_state.time_instance - previous_state.time_instance;
-    float dt = duration.count();
+    const chr::duration<float> duration = current_state.time_instance - previous_state.time_instance;
+    const float dt = duration.count();
 
     // Calculating integrals.
     current_state.deviation_integral = angular_deviation * dt + previous_state.deviation_integral;
@@ -48,11 +59,12 @@ namespace PIDControllerConstants {
       const std::vector<float> &lateral_parameters) const {
 
     // Calculating dt for updating the integral component.
-    chr::duration<float> duration = present_state.time_instance - previous_state.time_instance;
-    float dt = duration.count();
+    const chr::duration<float> duration = present_state.time_instance - previous_state.time_instance;
+    const float dt = duration.count();
 
     // Longitudinal PID calculation.
-    float expr_v = longitudinal_parameters[0] * present_state.velocity +
+    const float expr_v =
+        longitudinal_parameters[0] * present_state.velocity +
         longitudinal_parameters[1] * present_state.velocity_integral +
         longitudinal_parameters[2] * (present_state.velocity -
         previous_state.velocity) / dt;
@@ -70,26 +82,16 @@ namespace PIDControllerConstants {
     }
 
     // Lateral PID calculation.
-    float steer = lateral_parameters[0] * present_state.deviation +
+    float steer =
+        lateral_parameters[0] * present_state.deviation +
         lateral_parameters[1] * present_state.deviation_integral +
         lateral_parameters[2] * (present_state.deviation -
         previous_state.deviation) / dt;
-    
-
-    /*float steer = lateral_parameters[0] * present_state.distance +
-        lateral_parameters[1] * present_state.distance_integral +
-        lateral_parameters[2] * (present_state.distance -
-        previous_state.distance) / dt;
-
-        std::cout << "--------------------------------------\n";
-        std::cout << steer << "\n";
-        std::cout << lateral_parameters[0] * present_state.distance << "\n";
-        std::cout << lateral_parameters[1] * present_state.distance_integral << "\n";
-        std::cout << lateral_parameters[2] * (present_state.distance - previous_state.distance) / dt << "\n";
-    */
 
     steer = std::max(-1.0f, std::min(steer, 1.0f));
 
     return ActuationSignal{throttle, brake, steer};
   }
+
+} // namespace traffic_manager
 }

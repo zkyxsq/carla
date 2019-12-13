@@ -561,10 +561,11 @@ This function executes the whole list of commands on a single simulation step. F
   ApplyImpulse  
   SetSimulatePhysics  
   SetAutopilot.  
-- <a name="carla.Client.apply_batch_sync"></a>**<font color="#7fb800">apply_batch_sync</font>**(<font color="#00a6ed">**self**</font>, <font color="#00a6ed">**commands**</font>)  
+- <a name="carla.Client.apply_batch_sync"></a>**<font color="#7fb800">apply_batch_sync</font>**(<font color="#00a6ed">**self**</font>, <font color="#00a6ed">**commands**</font>, <font color="#00a6ed">**due_tick_cue**</font>)  
 This function executes the whole list of commands on a single simulation step, blocks until the commands are executed, and returns a list of [`command.Response`](#command.Response) that can be used to determine whether a single command succeeded or not. [sample_code](https://github.com/carla-simulator/carla/blob/10c5f6a482a21abfd00220c68c7f12b4110b7f63/PythonAPI/examples/spawn_npc.py#L112-L116).  
     - **Parameters:**
         - `commands` (_list_) – A list of commands to execute in batch. For a list of commands available see function above apply_batch().  
+        - `due_tick_cue` (_bool_) – A boolean parameter to specify whether or not to perform a [carla.World.tick](#carla.World.tick) after applying the batch in _synchronous mode_.  
     - **Return:** _list_  
 
 ---
@@ -712,6 +713,24 @@ Save the OpenDRIVE of the current map to disk.
     - **Parameters:**
         - `path` – Path where it will be saved.  
 - <a name="carla.Map.__str__"></a>**<font color="#7fb800">\__str__</font>**(<font color="#00a6ed">**self**</font>)  
+
+---
+
+## carla.RadarDetection<a name="carla.RadarDetection"></a> <sub><sup>_class_</sup></sub>
+Data contained by a [carla.RadarMeasurement](#carla.RadarMeasurement). Represents an object detection produced by the Radar sensor.  
+
+<h3>Instance Variables</h3>
+- <a name="carla.RadarDetection.velocity"></a>**<font color="#f8805a">velocity</font>** (_float_)  
+The velocity of the detected object towards the sensor in meters per second.  
+- <a name="carla.RadarDetection.azimuth"></a>**<font color="#f8805a">azimuth</font>** (_float_)  
+Azimuth angle of the detection in radians.  
+- <a name="carla.RadarDetection.altitude"></a>**<font color="#f8805a">altitude</font>** (_float_)  
+Altitude angle of the detection in radians.  
+- <a name="carla.RadarDetection.depth"></a>**<font color="#f8805a">depth</font>** (_float_)  
+Distance in meters from the sensor to the detection position.  
+
+<h3>Methods</h3>
+- <a name="carla.RadarDetection.__str__"></a>**<font color="#7fb800">\__str__</font>**(<font color="#00a6ed">**self**</font>)  
 
 ---
 
@@ -1221,6 +1240,9 @@ Find actor by id, return None if not found.
     - **Parameters:**
         - `actor_id` (_int_)  
     - **Return:** _[carla.Actor](#carla.Actor)_  
+- <a name="carla.World.get_random_location_from_navigation"></a>**<font color="#7fb800">get_random_location_from_navigation</font>**(<font color="#00a6ed">**self**</font>)  
+Retrieve a random location to be used as a destination for walkers in [carla.WalkerAIController.go_to_location](#carla.WalkerAIController.go_to_location). See [`spawn_npc.py`](https://github.com/carla-simulator/carla/blob/e73ad54d182e743b50690ca00f1709b08b16528c/PythonAPI/examples/spawn_npc.py#L179) for an example.  
+    - **Return:** _[carla.Location](#carla.Location)_  
 - <a name="carla.World.get_actors"></a>**<font color="#7fb800">get_actors</font>**(<font color="#00a6ed">**self**</font>)  
 By default it returns a list with every actor present in the world. _A list of ids can be used as a parameter_.  
     - **Return:** _[carla.ActorList](#carla.ActorList)_  
@@ -1317,19 +1339,35 @@ Return number of [carla.ActorSnapshot](#carla.ActorSnapshot) present in this [ca
 
 ---
 
-## carla.GnssEvent<a name="carla.GnssEvent"></a><sub><sup>([carla.SensorData](#carla.SensorData))</sup></sub> <sub><sup>_class_</sup></sub>
+## carla.GnssMeasurement<a name="carla.GnssMeasurement"></a><sub><sup>([carla.SensorData](#carla.SensorData))</sup></sub> <sub><sup>_class_</sup></sub>
 Gnss sensor data.  
 
 <h3>Instance Variables</h3>
-- <a name="carla.GnssEvent.latitude"></a>**<font color="#f8805a">latitude</font>** (_float_)  
+- <a name="carla.GnssMeasurement.latitude"></a>**<font color="#f8805a">latitude</font>** (_float_)  
 North/South value of a point on the map.  
-- <a name="carla.GnssEvent.longitude"></a>**<font color="#f8805a">longitude</font>** (_float_)  
+- <a name="carla.GnssMeasurement.longitude"></a>**<font color="#f8805a">longitude</font>** (_float_)  
 West/East value of a point on the map.  
-- <a name="carla.GnssEvent.altitude"></a>**<font color="#f8805a">altitude</font>** (_float_)  
+- <a name="carla.GnssMeasurement.altitude"></a>**<font color="#f8805a">altitude</font>** (_float_)  
 Height regarding ground level.  
 
 <h3>Methods</h3>
-- <a name="carla.GnssEvent.__str__"></a>**<font color="#7fb800">\__str__</font>**(<font color="#00a6ed">**self**</font>)  
+- <a name="carla.GnssMeasurement.__str__"></a>**<font color="#7fb800">\__str__</font>**(<font color="#00a6ed">**self**</font>)  
+
+---
+
+## carla.IMUMeasurement<a name="carla.IMUMeasurement"></a><sub><sup>([carla.SensorData](#carla.SensorData))</sup></sub> <sub><sup>_class_</sup></sub>
+IMU sensor data regarding the sensor World's transformation.  
+
+<h3>Instance Variables</h3>
+- <a name="carla.IMUMeasurement.accelerometer"></a>**<font color="#f8805a">accelerometer</font>** (_[carla.Vector3D](#carla.Vector3D)_)  
+Measures linear acceleration in `m/s^2`.  
+- <a name="carla.IMUMeasurement.gyroscope"></a>**<font color="#f8805a">gyroscope</font>** (_[carla.Vector3D](#carla.Vector3D)_)  
+Measures angular velocity in `rad/sec`.  
+- <a name="carla.IMUMeasurement.compass"></a>**<font color="#f8805a">compass</font>** (_float_)  
+Orientation with respect to the North (`(0.0, -1.0, 0.0)` in Unreal) in radians.  
+
+<h3>Methods</h3>
+- <a name="carla.IMUMeasurement.__str__"></a>**<font color="#7fb800">\__str__</font>**(<font color="#00a6ed">**self**</font>)  
 
 ---
 
@@ -1387,7 +1425,7 @@ Lidar sensor measurement data.
 
 <h3>Instance Variables</h3>
 - <a name="carla.LidarMeasurement.horizontal_angle"></a>**<font color="#f8805a">horizontal_angle</font>** (_float_)  
-Horizontal angle that the Lidar has rotated at the time of the measurement.  
+Horizontal angle that the Lidar has rotated at the time of the measurement (in radians).  
 - <a name="carla.LidarMeasurement.channels"></a>**<font color="#f8805a">channels</font>** (_int_)  
 Number of lasers.  
 - <a name="carla.LidarMeasurement.raw_data"></a>**<font color="#f8805a">raw_data</font>** (_bytes_)  
@@ -1459,6 +1497,29 @@ Get obstacle distance.
 
 <h3>Methods</h3>
 - <a name="carla.ObstacleDetectionEvent.__str__"></a>**<font color="#7fb800">\__str__</font>**(<font color="#00a6ed">**self**</font>)  
+
+---
+
+## carla.RadarMeasurement<a name="carla.RadarMeasurement"></a><sub><sup>([carla.SensorData](#carla.SensorData))</sup></sub> <sub><sup>_class_</sup></sub>
+Measurement produced by a Radar. Consists of an array of [carla.RadarDetection](#carla.RadarDetection).  
+
+<h3>Instance Variables</h3>
+- <a name="carla.RadarMeasurement.raw_data"></a>**<font color="#f8805a">raw_data</font>** (_bytes_)  
+List of [carla.RadarDetection](#carla.RadarDetection).  
+
+<h3>Methods</h3>
+- <a name="carla.RadarMeasurement.get_detection_count"></a>**<font color="#7fb800">get_detection_count</font>**(<font color="#00a6ed">**self**</font>)  
+Retrieve the number of [carla.RadarDetection](#carla.RadarDetection) that are generated.  
+- <a name="carla.RadarMeasurement.__len__"></a>**<font color="#7fb800">\__len__</font>**(<font color="#00a6ed">**self**</font>)  
+- <a name="carla.RadarMeasurement.__iter__"></a>**<font color="#7fb800">\__iter__</font>**(<font color="#00a6ed">**self**</font>)  
+- <a name="carla.RadarMeasurement.__getitem__"></a>**<font color="#7fb800">\__getitem__</font>**(<font color="#00a6ed">**self**</font>, <font color="#00a6ed">**pos**</font>)  
+    - **Parameters:**
+        - `pos` (_int_)  
+- <a name="carla.RadarMeasurement.__setitem__"></a>**<font color="#7fb800">\__setitem__</font>**(<font color="#00a6ed">**self**</font>, <font color="#00a6ed">**pos**</font>, <font color="#00a6ed">**detection**</font>)  
+    - **Parameters:**
+        - `pos` (_int_)  
+        - `detection` (_[carla.RadarDetection](#carla.RadarDetection)_)  
+- <a name="carla.RadarMeasurement.__str__"></a>**<font color="#7fb800">\__str__</font>**(<font color="#00a6ed">**self**</font>)  
 
 ---
 

@@ -1,3 +1,9 @@
+// Copyright (c) 2019 Computer Vision Center (CVC) at the Universitat Autonoma
+// de Barcelona (UAB).
+//
+// This work is licensed under the terms of the MIT license.
+// For a copy, see <https://opensource.org/licenses/MIT>.
+
 #pragma once
 
 #include <memory>
@@ -10,9 +16,10 @@
 #include "carla/trafficmanager/Messenger.h"
 #include "carla/trafficmanager/SimpleWaypoint.h"
 
+namespace carla {
 namespace traffic_manager {
 
-namespace cc = carla::client;
+  namespace cc = carla::client;
 
   /// Convenience typing.
 
@@ -45,6 +52,7 @@ namespace cc = carla::client;
     Buffer buffer;
     bool approaching_true_junction; 
     std::shared_ptr<SimpleWaypoint> final_bbox_point; 
+    std::unordered_set<carla::ActorId> overlapping_actors;
   };
 
   /// Type of data sent by the collision stage to the motion planner stage.
@@ -83,4 +91,6 @@ namespace cc = carla::client;
   using LocalizationToTrafficLightMessenger = Messenger<std::shared_ptr<LocalizationToTrafficLightFrame>>;
   using CollisionToPlannerMessenger = Messenger<std::shared_ptr<CollisionToPlannerFrame>>;
   using TrafficLightToPlannerMessenger = Messenger<std::shared_ptr<TrafficLightToPlannerFrame>>;
+
+} // namespace traffic_manager
 }

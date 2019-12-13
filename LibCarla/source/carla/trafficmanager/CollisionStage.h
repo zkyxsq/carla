@@ -1,8 +1,15 @@
+// Copyright (c) 2019 Computer Vision Center (CVC) at the Universitat Autonoma
+// de Barcelona (UAB).
+//
+// This work is licensed under the terms of the MIT license.
+// For a copy, see <https://opensource.org/licenses/MIT>.
+
 #pragma once
 
 #include <algorithm>
 #include <cmath>
 #include <deque>
+#include <stdlib.h>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -20,24 +27,27 @@
 #include "carla/geom/Vector3D.h"
 #include "carla/Logging.h"
 #include "carla/rpc/ActorId.h"
+#include "carla/rpc/TrafficLightState.h"
 
 #include "carla/trafficmanager/MessengerAndDataTypes.h"
 #include "carla/trafficmanager/Parameters.h"
 #include "carla/trafficmanager/PipelineStage.h"
 #include "carla/trafficmanager/VicinityGrid.h"
 
+namespace carla {
 namespace traffic_manager {
 
-namespace cc = carla::client;
-namespace cg = carla::geom;
-namespace chr = std::chrono;
-namespace bg = boost::geometry;
+  namespace cc = carla::client;
+  namespace cg = carla::geom;
+  namespace chr = std::chrono;
+  namespace bg = boost::geometry;
 
   using ActorId = carla::ActorId;
   using Actor = carla::SharedPtr<cc::Actor>;
   using Polygon = bg::model::polygon<bg::model::d2::point_xy<double>>;
   using LocationList = std::vector<cg::Location>;
   using SimpleWaypointPtr = std::shared_ptr<SimpleWaypoint>;
+  using TLS = carla::rpc::TrafficLightState;
 
   /// This class is the thread executable for the collision detection stage.
   /// The class is responsible for checking possible collisions with other
@@ -74,16 +84,9 @@ namespace bg = boost::geometry;
     std::unordered_map<ActorId, Actor> unregistered_actors;
     /// An object used to keep track of time between checking for all world
     /// actors.
-    chr::time_point<chr::_V2::system_clock, chr::nanoseconds> last_world_actors_pass_instance;
+    chr::time_point<chr::system_clock, chr::nanoseconds> last_world_actors_pass_instance;
     /// Number of vehicles registered with the traffic manager.
-    uint number_of_vehicles;
-
-    /// Returns true if there is a possible collision detected between the
-    /// vehicles passed to the method.
-    /// Collision is predicted by extrapolating a boundary around the vehicle
-    /// along its trajectory and checking if it overlaps with the extrapolated
-    /// boundary of the other vehicle.
-    bool CheckOverlap(const LocationList &boundary_a, const LocationList &boundary_b) const;
+    uint64_t number_of_vehicles;
 
     /// Returns the bounding box corners of the vehicle passed to the method.
     LocationList GetBoundary(const Actor &actor) const;
@@ -111,6 +114,7 @@ namespace bg = boost::geometry;
   public:
 
     CollisionStage(
+        std::string stage_name,
         std::shared_ptr<LocalizationToCollisionMessenger> localization_messenger,
         std::shared_ptr<CollisionToPlannerMessenger> planner_messenger,
         cc::World &world,
@@ -127,4 +131,5 @@ namespace bg = boost::geometry;
 
   };
 
+} // namespace traffic_manager
 }

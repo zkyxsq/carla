@@ -1,11 +1,14 @@
 #include "BatchControlStage.h"
 
+namespace carla {
 namespace traffic_manager {
 
   BatchControlStage::BatchControlStage(
+      std::string stage_name,
       std::shared_ptr<PlannerToControlMessenger> messenger,
       cc::Client &carla_client)
-    : messenger(messenger),
+    : PipelineStage(stage_name),
+      messenger(messenger),
       carla_client(carla_client) {
 
     // Initializing messenger state.
@@ -59,4 +62,5 @@ namespace traffic_manager {
     // Limiting updates to 100 frames per second.
     std::this_thread::sleep_for(10ms);
   }
+}
 }

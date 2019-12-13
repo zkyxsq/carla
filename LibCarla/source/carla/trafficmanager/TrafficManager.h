@@ -1,3 +1,9 @@
+// Copyright (c) 2019 Computer Vision Center (CVC) at the Universitat Autonoma
+// de Barcelona (UAB).
+//
+// This work is licensed under the terms of the MIT license.
+// For a copy, see <https://opensource.org/licenses/MIT>.
+
 #pragma once
 
 #include <algorithm>
@@ -25,11 +31,14 @@
 #include "carla/trafficmanager/Parameters.h"
 #include "carla/trafficmanager/TrafficLightStage.h"
 
+namespace carla {
 namespace traffic_manager {
 
-namespace cc = carla::client;
+  namespace cc = carla::client;
 
   using ActorPtr = carla::SharedPtr<cc::Actor>;
+  using TLS = carla::rpc::TrafficLightState;
+  using TLGroup = std::vector<carla::SharedPtr<cc::TrafficLight>>;
 
   /// The function of this class is to integrate all the various stages of
   /// the traffic manager appropriately using messengers.
@@ -76,7 +85,7 @@ namespace cc = carla::client;
     TrafficManager(
         std::vector<float> longitudinal_PID_parameters,
         std::vector<float> longitudinal_highway_PID_parameters,
-        std::vector<float> lateral_PID_parameters,  
+        std::vector<float> lateral_PID_parameters,
         std::vector<float> lateral_highway_PID_parameters,
         float perc_decrease_from_limit,
         cc::Client &client_connection);
@@ -101,13 +110,20 @@ namespace cc = carla::client;
     /// This method unregisters a vehicle from traffic manager.
     void UnregisterVehicles(const std::vector<ActorPtr> &actor_list);
 
+    /// This method kills a vehicle.
+    void DestroyVehicle(const ActorPtr &actor);
+
     /// Set target velocity specific to a vehicle.
-    void SetPercentageSpeedBelowLimit(const ActorPtr &actor, const float percentage);
+    void SetPercentageSpeedDifference(const ActorPtr &actor, float percentage);
+
+    /// Set global target velocity.
+    void SetGlobalPercentageSpeedDifference(float percentage);
 
     /// Set collision detection rules between vehicles.
-    void SetCollisionDetection(const ActorPtr &reference_actor,
-                               const ActorPtr &other_actor,
-                               const bool detect_collision);
+    void SetCollisionDetection(
+        const ActorPtr &reference_actor,
+        const ActorPtr &other_actor,
+        const bool detect_collision);
 
     /// Method to force lane change on a vehicle.
     /// Direction flag can be set to true for left and false for right.
@@ -120,9 +136,22 @@ namespace cc = carla::client;
     /// the leading vehicle.
     void SetDistanceToLeadingVehicle(const ActorPtr &actor, const float distance);
 
+    /// Method to specify the % chance of ignoring collisions with other actors
+    void SetPercentageIgnoreActors(const ActorPtr &actor, const float perc);
+
+    /// Method to specify the % chance of running a red light
+    void SetPercentageRunningLight(const ActorPtr &actor, const float perc);
+
+    /// Method to check if traffic lights are frozen.
+    bool CheckAllFrozen(TLGroup tl_to_freeze);
+
+    /// Method to reset all traffic lights.
+    void ResetAllTrafficLights();
+
     /// Destructor.
     ~TrafficManager();
 
   };
 
+} // namespace traffic_manager
 }

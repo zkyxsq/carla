@@ -1,5 +1,6 @@
 #include "MotionPlannerStage.h"
 
+namespace carla {
 namespace traffic_manager {
 
 namespace PlannerConstants {
@@ -8,30 +9,34 @@ namespace PlannerConstants {
   static const float HIGHWAY_SPEED = 50 / 3.6f;
   static const std::vector<float> URBAN_LONGITUDINAL_DEFAULTS = {0.1f, 0.15f, 0.01f};
   static const std::vector<float> HIGHWAY_LONGITUDINAL_DEFAULTS = {5.0f, 0.1f, 0.01f};
-  static const std::vector<float> LATERAL_DEFAULTS = {10.0f, 0.0f, 0.1f};
+  static const std::vector<float> URBAN_LATERAL_DEFAULTS = {10.0f, 0.0f, 0.1f};
   static const std::vector<float> HIGHWAY_LATERAL_DEFAULTS = {5.0f, 0.0f, 20.0f};
 }
   using namespace PlannerConstants;
 
   MotionPlannerStage::MotionPlannerStage(
+      std::string stage_name,
       std::shared_ptr<LocalizationToPlannerMessenger> localization_messenger,
       std::shared_ptr<CollisionToPlannerMessenger> collision_messenger,
       std::shared_ptr<TrafficLightToPlannerMessenger> traffic_light_messenger,
       std::shared_ptr<PlannerToControlMessenger> control_messenger,
       Parameters &parameters,
-      std::vector<float> longitudinal_parameters = URBAN_LONGITUDINAL_DEFAULTS,
-      std::vector<float> lateral_parameters = LATERAL_DEFAULTS,
-      std::vector<float> highway_longitudinal_parameters = HIGHWAY_LONGITUDINAL_DEFAULTS,
-      std::vector<float> highway_lateral_parameters = HIGHWAY_LATERAL_DEFAULTS)
-    : localization_messenger(localization_messenger),
+      std::vector<float> urban_longitudinal_parameters,
+      std::vector<float> highway_longitudinal_parameters,
+      std::vector<float> urban_lateral_parameters,
+      std::vector<float> highway_lateral_parameters,
+      cc::DebugHelper &debug_helper)
+    : PipelineStage(stage_name),
+      localization_messenger(localization_messenger),
       collision_messenger(collision_messenger),
       traffic_light_messenger(traffic_light_messenger),
       control_messenger(control_messenger),
       parameters(parameters),
-      longitudinal_parameters(longitudinal_parameters),
-      lateral_parameters(lateral_parameters),
+      urban_longitudinal_parameters(urban_longitudinal_parameters),
       highway_longitudinal_parameters(highway_longitudinal_parameters),
-      highway_lateral_parameters(highway_lateral_parameters) {
+      urban_lateral_parameters(urban_lateral_parameters),
+      highway_lateral_parameters(highway_lateral_parameters),
+      debug_helper(debug_helper){
 
     // Initializing the output frame selector.
     frame_selector = true;
@@ -85,6 +90,9 @@ namespace PlannerConstants {
       if (speed_limit > HIGHWAY_SPEED) {
         longitudinal_parameters = highway_longitudinal_parameters;
         lateral_parameters = highway_lateral_parameters;
+      } else {
+        longitudinal_parameters = urban_longitudinal_parameters;
+        lateral_parameters = urban_lateral_parameters;
       }
 
       // State update for vehicle.
@@ -171,4 +179,5 @@ namespace PlannerConstants {
     frame_selector = !frame_selector;
     control_messenger_state = control_messenger->SendData(data_packet);
   }
+}
 }

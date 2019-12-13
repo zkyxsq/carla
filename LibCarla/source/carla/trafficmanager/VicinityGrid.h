@@ -1,3 +1,9 @@
+// Copyright (c) 2019 Computer Vision Center (CVC) at the Universitat Autonoma
+// de Barcelona (UAB).
+//
+// This work is licensed under the terms of the MIT license.
+// For a copy, see <https://opensource.org/licenses/MIT>.
+
 #pragma once
 
 #include <cmath>
@@ -14,6 +20,7 @@
 
 #include "carla/trafficmanager/SimpleWaypoint.h"
 
+namespace carla {
 namespace traffic_manager {
 
   namespace cc = carla::client;
@@ -46,8 +53,8 @@ namespace traffic_manager {
     ~VicinityGrid();
 
     /// Returns a set of actors in the vicinity of a given actor.
-    std::unordered_set<ActorId> GetActors(Actor actor, const Buffer& buffer, float bbox_extension);
-
+    std::unordered_set<ActorId> GetActors(Actor actor);
+    
     /// Updates the grid position of the given actor and returns new grid id.
     std::pair<int, int> UpdateGrid(Actor actor);
 
@@ -56,4 +63,5 @@ namespace traffic_manager {
 
   };
 
+} // namespace traffic_manager
 }

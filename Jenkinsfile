@@ -21,7 +21,6 @@ pipeline {
             steps {
                 sh 'make LibCarla'
                 sh 'make PythonAPI'
-                sh 'make TrafficManager'
                 sh 'make CarlaUE4Editor'
                 sh 'make examples'
             }
@@ -53,7 +52,7 @@ pipeline {
         stage('Package') {
             steps {
                 sh 'make package'
-                sh 'make package ARGS="--packages=Town06,Town07 --clean-intermediate"'
+                sh 'make package ARGS="--packages=AdditionalMaps --clean-intermediate"'
             }
             post {
                 always {

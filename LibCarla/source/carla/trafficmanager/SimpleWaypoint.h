@@ -1,3 +1,9 @@
+// Copyright (c) 2019 Computer Vision Center (CVC) at the Universitat Autonoma
+// de Barcelona (UAB).
+//
+// This work is licensed under the terms of the MIT license.
+// For a copy, see <https://opensource.org/licenses/MIT>.
+
 #pragma once
 
 #include <stdexcept>
@@ -9,10 +15,11 @@
 #include "carla/geom/Vector3D.h"
 #include "carla/Memory.h"
 
+namespace carla {
 namespace traffic_manager {
 
-namespace cc = carla::client;
-namespace cg = carla::geom;
+  namespace cc = carla::client;
+  namespace cg = carla::geom;
   using WaypointPtr = carla::SharedPtr<cc::Waypoint>;
 
   /// This is a simple wrapper class on Carla's waypoint object.
@@ -49,8 +56,11 @@ namespace cg = carla::geom;
     /// Returns the vector along the waypoint's direction.
     cg::Vector3D GetForwardVector() const;
 
+    /// Returns the unique id for the waypoint.
+    uint64_t GetId() const;
+
     /// This method is used to set the next waypoints.
-    uint SetNextWaypoint(const std::vector<SimpleWaypointPtr> &next_waypoints);
+    uint64_t SetNextWaypoint(const std::vector<SimpleWaypointPtr> &next_waypoints);
 
     /// This method is used to set the closest left waypoint for a lane change.
     void SetLeftWaypoint(SimpleWaypointPtr waypoint);
@@ -85,4 +95,5 @@ namespace cg = carla::geom;
 
   };
 
-}
+} // namespace traffic_manager
+} // namespace carla

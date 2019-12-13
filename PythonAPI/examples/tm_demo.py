@@ -74,8 +74,8 @@ def main():
         traffic_manager = None
         world = client.get_world()
         weather = carla.WeatherParameters(
-            cloudyness=50.0,
-            sun_altitude_angle=70.0)
+            cloudyness=100.0,
+            sun_altitude_angle=00.0)
         world.set_weather(weather)
 
         blueprints = world.get_blueprint_library().filter(args.filter)
@@ -139,11 +139,11 @@ def main():
                 traffic_manager.set_distance_to_leading_vehicle(v, 6)
 
         time.sleep(6)
-        while True:
-            time.sleep(7)
-            print("Lane Change!")
-            for v in vehicle_list:
-                traffic_manager.force_lane_change(v, True)
+        #while True:
+        #    time.sleep(7)
+        #    print("Lane Change!")
+        #    for v in vehicle_list:
+        #        traffic_manager.force_lane_change(v, True)
 
 
         while True:

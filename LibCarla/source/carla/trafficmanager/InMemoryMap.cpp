@@ -1,5 +1,6 @@
 #include "InMemoryMap.h"
 
+namespace carla {
 namespace traffic_manager {
 
 namespace MapConstants {
@@ -227,4 +228,5 @@ namespace MapConstants {
         + std::to_string(loc.z));
     }
   }
+}
 }

@@ -1,7 +1,15 @@
+// Copyright (c) 2019 Computer Vision Center (CVC) at the Universitat Autonoma
+// de Barcelona (UAB).
+//
+// This work is licensed under the terms of the MIT license.
+// For a copy, see <https://opensource.org/licenses/MIT>.
+
 #pragma once
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
+#include <ctime>
 #include <deque>
 #include <memory>
 #include <mutex>
@@ -18,16 +26,20 @@
 
 #include "carla/trafficmanager/AtomicActorSet.h"
 #include "carla/trafficmanager/InMemoryMap.h"
+#include "carla/trafficmanager/LocalizationUtils.h"
 #include "carla/trafficmanager/MessengerAndDataTypes.h"
 #include "carla/trafficmanager/Parameters.h"
 #include "carla/trafficmanager/PipelineStage.h"
 #include "carla/trafficmanager/SimpleWaypoint.h"
-#include "carla/trafficmanager/TrafficDistributor.h"
 
+namespace carla {
 namespace traffic_manager {
 
-namespace cc = carla::client;
+  using namespace std::chrono;
+  namespace cc = carla::client;
   using Actor = carla::SharedPtr<cc::Actor>;
+  using ActorId = carla::ActorId;
+  using ActorIdSet = std::unordered_set<ActorId>;
 
   /// This class is responsible for maintaining a horizon of waypoints ahead
   /// of the vehicle for it to follow.
@@ -77,26 +89,37 @@ namespace cc = carla::client;
     /// Structures to hold waypoint buffers for all vehicles.
     /// These are shared with the collisions stage.
     std::shared_ptr<BufferList> buffer_list;
-    /// Object used to keep track of vehicles according to their map position,
-    /// determine and execute lane changes.
-    TrafficDistributor traffic_distributor;
     /// Map connecting actor ids to indices of data arrays.
-    std::unordered_map<carla::ActorId, uint> vehicle_id_to_index;
+    std::unordered_map<ActorId, uint> vehicle_id_to_index;
     /// Number of vehicles currently registered with the traffic manager.
-    uint number_of_vehicles;
+    uint64_t number_of_vehicles;
     /// Used to only calculate the extended buffer once at junctions
-    std::map<carla::ActorId, bool> Approached;
+    std::map<carla::ActorId, bool> approached;
     /// Final Waypoint of the bounding box at intersections, amps to their respective IDs
     std::map<carla::ActorId, SimpleWaypointPtr> final_points;
+    /// Object for tracking paths of the traffic vehicles.
+    TrackTraffic track_traffic;
+    /// Map of all vehicles' idle time
+    std::unordered_map<ActorId, chr::time_point<chr::system_clock, chr::nanoseconds>> idle_time;
+
+
+
     /// A simple method used to draw waypoint buffer ahead of a vehicle.
     void DrawBuffer(Buffer &buffer);
     // When near an intersection, extends the buffer throughout all the intersection
     // Returns a SimpleWaypointPtr, which is the end of the collision bounding box
-    SimpleWaypointPtr ExtendBufferAtJunctions(Actor &vehicle, Buffer &waypoint_buffer);
+    SimpleWaypointPtr ExtendBufferAtJunctions(float length, Buffer &waypoint_buffer);
+
+    /// Method to determine lane change and obtain target lane waypoint.
+    SimpleWaypointPtr AssignLaneChange(Actor vehicle, bool force, bool direction);
+    /// Methods to modify waypoint buffer and track traffic.
+    void PushWaypoint(Buffer& buffer, ActorId actor_id, SimpleWaypointPtr& waypoint);
+    void PopWaypoint(Buffer& buffer, ActorId actor_id);
 
   public:
 
     LocalizationStage(
+        std::string stage_name,
         std::shared_ptr<LocalizationToPlannerMessenger> planner_messenger,
         std::shared_ptr<LocalizationToCollisionMessenger> collision_messenger,
         std::shared_ptr<LocalizationToTrafficLightMessenger> traffic_light_messenger,
@@ -115,4 +138,5 @@ namespace cc = carla::client;
 
   };
 
+} // namespace traffic_manager
 }

@@ -1,3 +1,9 @@
+// Copyright (c) 2019 Computer Vision Center (CVC) at the Universitat Autonoma
+// de Barcelona (UAB).
+//
+// This work is licensed under the terms of the MIT license.
+// For a copy, see <https://opensource.org/licenses/MIT>.
+
 #pragma once
 
 #include <chrono>
@@ -5,21 +11,24 @@
 #include <mutex>
 #include <unordered_map>
 
-#include "carla/client/Vehicle.h"
-#include "carla/client/TrafficLight.h"
-#include "carla/client/World.h"
 #include "carla/client/ActorList.h"
+#include "carla/client/TrafficLight.h"
+#include "carla/client/Vehicle.h"
+#include "carla/client/World.h"
 #include "carla/Memory.h"
 #include "carla/rpc/TrafficLightState.h"
 
 #include "carla/trafficmanager/MessengerAndDataTypes.h"
+#include "carla/trafficmanager/Parameters.h"
 #include "carla/trafficmanager/PipelineStage.h"
 
+
+namespace carla {
 namespace traffic_manager {
 
-namespace chr = std::chrono;
-namespace cc = carla::client;
-namespace cg = carla::geom;
+  namespace chr = std::chrono;
+  namespace cc = carla::client;
+  namespace cg = carla::geom;
 
   using ActorId = carla::ActorId;
   using Actor = carla::SharedPtr<cc::Actor>;
@@ -27,7 +36,7 @@ namespace cg = carla::geom;
   using SimpleWaypointPtr = std::shared_ptr<SimpleWaypoint>;
   using TrafficLight = carla::SharedPtr<cc::TrafficLight>;
   using TLS = carla::rpc::TrafficLightState;
-  using TimeInstance = chr::time_point<chr::_V2::system_clock, chr::nanoseconds>;
+  using TimeInstance = chr::time_point<chr::system_clock, chr::nanoseconds>;
 
   /// This class provides the information about the Traffic Lights at the
   /// junctions.
@@ -48,6 +57,8 @@ namespace cg = carla::geom;
     /// Pointers to messenger objects.
     std::shared_ptr<LocalizationToTrafficLightMessenger> localization_messenger;
     std::shared_ptr<TrafficLightToPlannerMessenger> planner_messenger;
+    /// Runtime parameterization object.
+    Parameters &parameters;
     /// Reference to Carla's debug helper object.
     cc::DebugHelper &debug_helper;
     /// Map containing the time ticket issued for vehicles.
@@ -59,21 +70,19 @@ namespace cg = carla::geom;
     /// No signal negotiation mutex.
     std::mutex no_signal_negotiation_mutex;
     /// Number of vehicles registered with the traffic manager.
-    uint number_of_vehicles;
-    /// Reference to Carla's world object.
-    cc::World &world;
+    uint64_t number_of_vehicles;
 
 
     void DrawLight(TLS traffic_light_state, const Actor &ego_actor) const;
-    void ResetAllTrafficLightGroups();
 
   public:
 
     TrafficLightStage(
+        std::string stage_name,
         std::shared_ptr<LocalizationToTrafficLightMessenger> localization_messenger,
         std::shared_ptr<TrafficLightToPlannerMessenger> planner_messenger,
-        cc::DebugHelper &debug_helper,
-        cc::World &world);
+        Parameters &parameters,
+        cc::DebugHelper &debug_helper);
     ~TrafficLightStage();
 
     void DataReceiver() override;
@@ -84,4 +93,5 @@ namespace cg = carla::geom;
 
   };
 
-}
+} // namespace traffic_manager
+} // namespace carla

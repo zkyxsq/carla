@@ -1,3 +1,9 @@
+// Copyright (c) 2019 Computer Vision Center (CVC) at the Universitat Autonoma
+// de Barcelona (UAB).
+//
+// This work is licensed under the terms of the MIT license.
+// For a copy, see <https://opensource.org/licenses/MIT>.
+
 #pragma once
 
 #include <chrono>
@@ -12,10 +18,11 @@
 #include "carla/trafficmanager/PIDController.h"
 #include "carla/trafficmanager/PipelineStage.h"
 
+namespace carla {
 namespace traffic_manager {
 
-namespace chr = std::chrono;
-namespace cc = carla::client;
+  namespace chr = std::chrono;
+  namespace cc = carla::client;
 
   using Actor = carla::SharedPtr<cc::Actor>;
   using ActorId = carla::rpc::ActorId;
@@ -54,27 +61,34 @@ namespace cc = carla::client;
     /// Run time parameterization object.
     Parameters &parameters;
     /// Configuration parameters for the PID controller.
+    std::vector<float> urban_longitudinal_parameters;
+    std::vector<float> highway_longitudinal_parameters;
+    std::vector<float> urban_lateral_parameters;
+    std::vector<float> highway_lateral_parameters;
     std::vector<float> longitudinal_parameters;
     std::vector<float> lateral_parameters;
-    std::vector<float> highway_longitudinal_parameters;
-    std::vector<float> highway_lateral_parameters;
     /// Controller object.
     PIDController controller;
     /// Number of vehicles registered with the traffic manager.
-    uint number_of_vehicles;
+    uint64_t number_of_vehicles;
+    /// Reference to Carla's debug helper object.
+    cc::DebugHelper &debug_helper;
+
 
   public:
 
     MotionPlannerStage(
+        std::string stage_name,
         std::shared_ptr<LocalizationToPlannerMessenger> localization_messenger,
         std::shared_ptr<CollisionToPlannerMessenger> collision_messenger,
         std::shared_ptr<TrafficLightToPlannerMessenger> traffic_light_messenger,
         std::shared_ptr<PlannerToControlMessenger> control_messenger,
         Parameters &parameters,
-        std::vector<float> longitudinal_parameters,
-        std::vector<float> lateral_parameters,
+        std::vector<float> urban_longitudinal_parameters,
+        std::vector<float> urban_lateral_parameters,
         std::vector<float> highway_longitudinal_parameters,
-        std::vector<float> highway_lateral_parameters);
+        std::vector<float> highway_lateral_parameters,
+        cc::DebugHelper &debug_helper);
 
     ~MotionPlannerStage();
 
@@ -84,6 +98,9 @@ namespace cc = carla::client;
 
     void DataSender() override;
 
+    void DrawPIDValues(const boost::shared_ptr<cc::Vehicle> vehicle, const float throttle, const float brake);
+
   };
 
+} // namespace traffic_manager
 }

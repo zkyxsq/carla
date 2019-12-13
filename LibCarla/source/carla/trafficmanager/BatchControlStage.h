@@ -1,3 +1,9 @@
+// Copyright (c) 2019 Computer Vision Center (CVC) at the Universitat Autonoma
+// de Barcelona (UAB).
+//
+// This work is licensed under the terms of the MIT license.
+// For a copy, see <https://opensource.org/licenses/MIT>.
+
 #pragma once
 
 #include <memory>
@@ -11,10 +17,11 @@
 #include "carla/trafficmanager/MessengerAndDataTypes.h"
 #include "carla/trafficmanager/PipelineStage.h"
 
+namespace carla {
 namespace traffic_manager {
 
-namespace cc = carla::client;
-namespace cr = carla::rpc;
+  namespace cc = carla::client;
+  namespace cr = carla::rpc;
 
   /// This class receives actuation signals (throttle, brake, steer)
   /// from MotionPlannerStage class and communicates these signals to
@@ -34,11 +41,12 @@ namespace cr = carla::rpc;
     /// Array to hold command batch.
     std::shared_ptr<std::vector<cr::Command>> commands;
     /// Number of vehicles registered with the traffic manager.
-    uint number_of_vehicles;
+    uint64_t number_of_vehicles;
 
   public:
 
     BatchControlStage(
+        std::string stage_name,
         std::shared_ptr<PlannerToControlMessenger> messenger,
         cc::Client &carla_client);
     ~BatchControlStage();
@@ -51,4 +59,5 @@ namespace cr = carla::rpc;
 
   };
 
+} // namespace traffic_manager
 }

@@ -1,3 +1,9 @@
+// Copyright (c) 2019 Computer Vision Center (CVC) at the Universitat Autonoma
+// de Barcelona (UAB).
+//
+// This work is licensed under the terms of the MIT license.
+// For a copy, see <https://opensource.org/licenses/MIT>.
+
 #pragma once
 
 #include <chrono>
@@ -11,13 +17,16 @@
 #include "carla/geom/Location.h"
 #include "carla/geom/Math.h"
 #include "carla/Memory.h"
+#include "carla/road/Lane.h"
 
 #include "carla/trafficmanager/SimpleWaypoint.h"
 
+namespace carla {
 namespace traffic_manager {
 
-namespace cg = carla::geom;
-namespace cc = carla::client;
+  namespace cg = carla::geom;
+  namespace cc = carla::client;
+  namespace crd = carla::road;
 
   using WaypointPtr = carla::SharedPtr<cc::Waypoint>;
   using TopologyList = std::vector<std::pair<WaypointPtr, WaypointPtr>>;
@@ -69,4 +78,5 @@ namespace cc = carla::client;
 
   };
 
-}
+} // namespace traffic_manager
+} // namespace carla
