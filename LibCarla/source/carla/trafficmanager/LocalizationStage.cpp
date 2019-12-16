@@ -66,7 +66,25 @@ namespace LocalizationConstants {
       ActorId actor_id = vehicle->GetId();
       approached[actor_id] = false;
       final_points[actor_id] = nullptr;
+    }
+
+    /*std::vector<SimpleWaypointPtr> waypoint_list = local_map.GetDenseTopology();
+    for (uint j = 0u; j < waypoint_list.size(); j++){
+      if (j%10 == 0){
+        auto laneId = waypoint_list.at(j)->GetWaypoint()->GetRoadId();
+        if (laneId < 0){
+          debug_helper.DrawString(waypoint_list.at(j)->GetLocation(),std::to_string(laneId),false,{255u, 0u, 0u},100.0f);
+        } else {
+          debug_helper.DrawString(waypoint_list.at(j)->GetLocation(),std::to_string(laneId),false,{0u, 255u, 0u},100.0f);
+        }
+
+        if (waypoint_list.at(j)->CheckJunction()){
+          debug_helper.DrawPoint(waypoint_list.at(j)->GetLocation(),0.06f,{0u, 0u, 255u},100.0f);
+        } else {
+          debug_helper.DrawPoint(waypoint_list.at(j)->GetLocation(),0.06f,{0u, 255u, 255u},100.0f);
+        }
       }
+    }*/
   }
 
   LocalizationStage::~LocalizationStage() {}
