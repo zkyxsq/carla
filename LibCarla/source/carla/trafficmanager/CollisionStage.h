@@ -78,7 +78,7 @@ namespace traffic_manager {
     /// An object used for grid binning vehicles for faster proximity detection.
     VicinityGrid vicinity_grid;
     /// The map used to connect actor ids to the array index of data frames.
-    std::unordered_map<ActorId, uint> vehicle_id_to_index;
+    std::unordered_map<ActorId, uint64_t> vehicle_id_to_index;
     /// A structure used to keep track of actors spawned outside of traffic
     /// manager.
     std::unordered_map<ActorId, Actor> unregistered_actors;
