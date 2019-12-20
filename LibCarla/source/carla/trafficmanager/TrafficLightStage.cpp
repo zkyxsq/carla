@@ -60,12 +60,10 @@ namespace traffic_manager {
       if (parameters.GetPercentageRunningLight(boost::shared_ptr<cc::Actor>(ego_actor)) > r)
         traffic_light_state = TLS::Green;
 
+      // DrawLight(traffic_light_state, ego_vehicle);
       // We determine to stop if the current position of the vehicle is not a
-      // junction,
-      // a point on the path beyond a threshold (velocity-dependent) distance
-      // is inside the junction and there is a red or yellow light.
+      // junction, and there is a red or yellow light.
       if (!closest_waypoint->CheckJunction() &&
-          look_ahead_point->CheckJunction() &&
           ego_vehicle->IsAtTrafficLight() &&
           traffic_light_state != TLS::Green) {
 
