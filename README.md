@@ -6,7 +6,7 @@ CARLA Simulator
 
 [![carla.org](Docs/img/btn/web.png)](http://carla.org)
 [![download](Docs/img/btn/download.png)](https://github.com/carla-simulator/carla/blob/master/Docs/download.md)
-[![documentation](Docs/img/btn/docs.png)](http://carla.readthedocs.io)
+[![documentation](Docs/img/btn/docs.png)](http://carla.readthedocs.io)<br>
 [![forum](Docs/img/btn/forum.png)](https://forum.carla.org)
 [![discord](Docs/img/btn/chat.png)](https://discord.gg/8kqACuC)
 [![dev](Docs/img/btn/dev.png)](https://groups.google.com/a/osvf.org/forum/#!forum/carla-developers)
