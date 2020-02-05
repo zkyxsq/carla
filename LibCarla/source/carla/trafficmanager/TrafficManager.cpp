@@ -5,6 +5,7 @@
 // For a copy, see <https://opensource.org/licenses/MIT>.
 
 #include "carla/client/Client.h"
+#include "carla/client/World.h"
 #include "carla/trafficmanager/TrafficManager.h"
 #include "carla/trafficmanager/TrafficManagerBase.h"
 #include "carla/Exception.h"
@@ -18,19 +19,27 @@ namespace traffic_manager {
 std::unique_ptr<TrafficManagerBase> TrafficManager::singleton_pointer = nullptr;
 
 /// Private constructor for singleton life cycle management.
-TrafficManager :: TrafficManager(carla::client::detail::EpisodeProxy episodeProxy) {
+TrafficManager::TrafficManager(uint16_t port) {
 
 	/// Set default
 	int counter = INVALID_INDEX;
 
 	/// Get default port
-	uint16_t RPCportTM = TM_SERVER_PORT;
+	uint16_t RPCportTM = port;
+
+	/// Get current world information
+	client::World* world = client::GetWorld();
+
+	/// Get episodeProxy details from world
+	client::detail::EpisodeProxy episodeProxy = world->GetEpisode();
+
+
 
 	/// Get Local IP details
-	auto GetLocalIP = [=]()-> std::pair<std::string, std::string>
+	auto GetLocalIP = [=](const uint16_t &sport)-> std::pair<std::string, uint16_t>
 	{
 		int err;
-		std::pair<std::string, std::string> localIP;
+		std::pair<std::string, uint16_t> localIP;
 		int sock = socket(AF_INET, SOCK_DGRAM, 0);
 		if(sock == INVALID_INDEX) {
 #if DEBUG_PRINT_TM
@@ -45,8 +54,8 @@ TrafficManager :: TrafficManager(carla::client::detail::EpisodeProxy episodeProx
 			loopback.sin_port = htons(9);
 			err = connect
 					( sock
-					, reinterpret_cast<sockaddr*>(&loopback)
-					, sizeof(loopback));
+							, reinterpret_cast<sockaddr*>(&loopback)
+							, sizeof(loopback));
 			if(err == INVALID_INDEX) {
 #if DEBUG_PRINT_TM
 				std::cout << "Error number2: " << errno << std::endl;
@@ -56,8 +65,8 @@ TrafficManager :: TrafficManager(carla::client::detail::EpisodeProxy episodeProx
 				socklen_t addrlen = sizeof(loopback);
 				err = getsockname
 						( sock
-								, reinterpret_cast<struct sockaddr*> (&loopback)
-								, &addrlen);
+						, reinterpret_cast<struct sockaddr*> (&loopback)
+						, &addrlen);
 				if(err == INVALID_INDEX) {
 #if DEBUG_PRINT_TM
 					std::cout << "Error number3: " << errno << std::endl;
@@ -67,11 +76,10 @@ TrafficManager :: TrafficManager(carla::client::detail::EpisodeProxy episodeProx
 					char buffer[IP_DATA_BUFFER_SIZE];
 					const char* p = inet_ntop
 							( AF_INET
-								, &loopback.sin_addr, buffer
-								, IP_DATA_BUFFER_SIZE);
+							, &loopback.sin_addr, buffer
+							, IP_DATA_BUFFER_SIZE);
 					if(p != NULL) {
-						localIP = std::make_pair<std::string, std::string>
-						(buffer, std::to_string(RPCportTM));
+						localIP = std::pair<std::string, uint16_t>(std::string(buffer), sport);
 					} else {
 #if DEBUG_PRINT_TM
 						std::cout << "Error number4: " << errno << std::endl;
@@ -84,6 +92,7 @@ TrafficManager :: TrafficManager(carla::client::detail::EpisodeProxy episodeProx
 		}
 		return localIP;
 	};
+
 
 
 	/// Filter to get all current episode vehicle information
@@ -99,6 +108,8 @@ TrafficManager :: TrafficManager(carla::client::detail::EpisodeProxy episodeProx
 		return filtered;
 	};
 
+
+
 	/// Check singleton instance already created or not
 	if (!singleton_pointer) {
 
@@ -106,81 +117,84 @@ TrafficManager :: TrafficManager(carla::client::detail::EpisodeProxy episodeProx
 		while(true) {
 
 			/// Set default
-			bool serverRunningTMRPC = true;
+			bool serverRunningTMRPC = false;
 
-			// parent process: user-client wait for TM to start (if any)
-			std::this_thread::sleep_for(0.5s);
+			/// Check for all possible ports
+			for (uint16_t tcount = 0; tcount < MIN_TRY_COUNT; tcount++) {
 
-			/// Check TM instance already registered with server or not
-			if(episodeProxy.Lock()->IsTrafficManagerRunning()) {
+				/// Wait for vehicle registration
+				std::this_thread::sleep_for(0.1s);
 
-				/// Get TM server info (Remote IP & PORT)
-				std::pair<std::string, std::string> serverTM = episodeProxy.Lock()->GetTrafficManagerRunning();
+				/// Check TM instance already registered with server or not
+				if(episodeProxy.Lock()->IsTrafficManagerRunning(port + tcount)) {
 
-				/// Set IP and port
-				TrafficManagerRemote* tm_ptr = new(std::nothrow)
-						TrafficManagerRemote(serverTM, episodeProxy);
+					/// Get TM server info (Remote IP & PORT)
+					std::pair<std::string, uint16_t> serverTM =
+					episodeProxy.Lock()->GetTrafficManagerRunning(port + tcount);
 
-				/// Try to connect to remote TM server
-				try {
+					/// Set remote TM server IP and port
+					TrafficManagerRemote* tm_ptr = new(std::nothrow)
+					TrafficManagerRemote(serverTM, episodeProxy);
 
-					/// Check memory allocated or not
-					if(tm_ptr != nullptr) {
+					/// Try to connect to remote TM server
+					try {
+
+						/// Check memory allocated or not
+						if(tm_ptr != nullptr) {
+
+#if DEBUG_PRINT_TM
+							/// Test print
+							std::cout 	<< "OLD[" << counter + 1 <<"]: Registered TM at "
+										<< serverTM.first  << ":"
+										<< serverTM.second << " ..... TRY "
+										<< std::endl;
+#endif
+							/// Try to reset all traffic lights
+							tm_ptr->HealthCheckRemoteTM();
+
+#if DEBUG_PRINT_TM
+							/// Test print
+							std::cout 	<< "OLD[" << counter + 1 <<"]: Registered TM at "
+										<< serverTM.first  << ":"
+										<< serverTM.second << " ..... SUCCESS "
+										<< std::endl;
+#endif
+							/// Set the pointer of the instance
+							singleton_pointer = std::unique_ptr<TrafficManagerBase>(tm_ptr);
+
+							/// Set flag to indicate TM server running
+							serverRunningTMRPC = true;
+						}
+					}
+
+					/// If Connection error occurred
+					catch (...) {
+
+						/// Clear previously allocated memory
+						delete tm_ptr;
 
 #if DEBUG_PRINT_TM
 						/// Test print
 						std::cout 	<< "OLD[" << counter + 1 <<"]: Registered TM at "
-								<< serverTM.first  << ":"
-								<< serverTM.second << " ..... TRY "
-								<< std::endl;
+									<< serverTM.first  << ":"
+									<< serverTM.second << " ..... FAILED "
+									<< std::endl;
 #endif
-						/// Try to reset all traffic lights
-						tm_ptr->HealthCheckRemoteTM();
-
-#if DEBUG_PRINT_TM
-						/// Test print
-						std::cout 	<< "OLD[" << counter + 1 <<"]: Registered TM at "
-								<< serverTM.first  << ":"
-								<< serverTM.second << " ..... SUCCESS "
-								<< std::endl;
-#endif
-						/// Set the pointer of the instance
-						singleton_pointer = std::unique_ptr<TrafficManagerBase>(tm_ptr);
 					}
 				}
 
-				/// If Connection error occurred
-				catch (...) {
-
-					/// Clear previously allocated memory
-					delete tm_ptr;
-
-					/// Set flag to indicate TM server not running
-					serverRunningTMRPC = false;
-
-#if DEBUG_PRINT_TM
-					/// Test print
-					std::cout 	<< "OLD[" << counter + 1 <<"]: Registered TM at "
-							<< serverTM.first  << ":"
-							<< serverTM.second << " ..... FAILED "
-							<< std::endl;
-#endif
+				/// Mark running server found
+				if(serverRunningTMRPC) {
+					/// As running server found exit from loop
+					break;
 				}
-			} else {
-
-#if DEBUG_PRINT_TM
-				/// Test print
-				std::cout 	<< "OLD[" << counter + 1 <<"]: No Registered TM." << std::endl;
-#endif
-				/// Set flag to indicate TM server not running
-				serverRunningTMRPC = false;
 			}
 
 			/// As TM server not running
 			if(counter == INVALID_INDEX && !serverRunningTMRPC) {
 
 				/// Set default port
-				RPCportTM = TM_SERVER_PORT;
+				RPCportTM = port;
 
 				/// Get server details
 				std::string carlaServerDetails(episodeProxy.Lock()->GetEndpoint());
@@ -203,14 +217,14 @@ TrafficManager :: TrafficManager(carla::client::detail::EpisodeProxy episodeProx
 					const std::vector<float> lateral_highway_param 		= {9.0f, 0.02f, 1.0f};
 					const float perc_difference_from_limit 				= 30.0f;
 
-					std::pair<std::string, std::string> serverTM;
+					std::pair<std::string, uint16_t> serverTM;
 
 					/// Try to run TM as long as vehicles are present
 					try {
 
 						/// Create new client
 						auto client = carla::client::Client(srthost, rpcPort);
-						auto episodeProxyLocal = client.GetCurrentEpisode();
+						auto episodeProxyLocal = client.GetWorld().GetEpisode();
 
 						/// Set client timeout
 						client.SetTimeout(2s);
@@ -218,11 +232,11 @@ TrafficManager :: TrafficManager(carla::client::detail::EpisodeProxy episodeProx
 						/// Create local instance of TM
 						TrafficManagerLocal* tm_ptr = new TrafficManagerLocal
 								( longitudinal_param
-										, longitudinal_highway_param
-										, lateral_param
-										, lateral_highway_param
-										, perc_difference_from_limit
-										, episodeProxyLocal);
+								, longitudinal_highway_param
+								, lateral_param
+								, lateral_highway_param
+								, perc_difference_from_limit
+								, episodeProxyLocal);
 
 						/// Create RPC TM server
 						TrafficManagerServer server = TrafficManagerServer
@@ -230,16 +244,16 @@ TrafficManager :: TrafficManager(carla::client::detail::EpisodeProxy episodeProx
 								, static_cast<carla::traffic_manager::TrafficManagerBase *>(tm_ptr));
 
 						/// Get TM server info (Local IP & PORT)
-						serverTM = GetLocalIP();
+						serverTM = GetLocalIP(RPCportTM);
 
 						/// Set this client as the TM to server
-						episodeProxyLocal.Lock()->SetTrafficManagerRunning(serverTM);
+						episodeProxyLocal.Lock()->AddTrafficManagerRunning(serverTM);
 
 						/// Print status
-						std::cout 	<< "NEW[@]: Registered TM at "
-								<< serverTM.first  << ":"
-								<< serverTM.second << " ..... SUCCESS."
-								<< std::endl;
+						std::cout 	<< "NEW@: Registered TM at "
+									<< serverTM.first  << ":"
+									<< serverTM.second << " ..... SUCCESS."
+									<< std::endl;
 
 						/// Sleep for 5 seconds to wait to check any vehicle registered or not
 						do {
@@ -279,7 +293,7 @@ TrafficManager :: TrafficManager(carla::client::detail::EpisodeProxy episodeProx
 							}
 
 							/// Run for ever unit carla server exist
-						} while (episodeProxyLocal.Lock()->IsTrafficManagerRunning());
+						} while (episodeProxyLocal.Lock()->IsTrafficManagerRunning(RPCportTM));
 
 						/// Clear allocated TM memory
 						if(tm_ptr) {
@@ -287,12 +301,13 @@ TrafficManager :: TrafficManager(carla::client::detail::EpisodeProxy episodeProx
 						}
 					} catch (const carla::client::TimeoutException &e) {
 
-						std::cout << "\nRuntimeError: " << e.what() << std::endl;
 						/// Timeout exception happened
+						std::cout << "\nRuntimeError: " << e.what() << std::endl;
+
 					} catch (const std::exception &e) {
 
 						/// Print status
-						std::cout 	<< "ERRS: Registered TM at "
+						std::cout 	<< "ERR@: Registered TM at "
 								<< serverTM.first  << ":"
 								<< serverTM.second << " ..... CAUGHT."
 								<< std::endl;
@@ -314,13 +329,13 @@ TrafficManager :: TrafficManager(carla::client::detail::EpisodeProxy episodeProx
 
 					/// Throw error to notify calling client
 					throw_exception(std::runtime_error(
-					  "trying to create a separate process for traffic manager; "
-					  "but the system failed to create process by fork() call."));
+							"trying to create a separate process for traffic manager; "
+							"but the system failed to create process by fork() call."));
 				}
 			}
 
 			/// Try for limited number of times
-			if(singleton_pointer || (MIN_TRY_COUNT < ++counter)) break;
+			if(singleton_pointer || (MIN_TRY_COUNT <= ++counter)) break;
 		}
 	}
 }
