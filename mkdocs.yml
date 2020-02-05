@@ -22,6 +22,7 @@ nav:
   - 'Configuring the simulation': 'configuring_the_simulation.md'
   - 'Cameras and sensors': 'cameras_and_sensors.md'
   - 'Python Cookbook': 'python_cookbook.md'
+  - 'Traffic manager': 'traffic_manager.md'
 - References: 
   - 'Python API reference': 'python_api.md'
   - 'Blueprint Library': 'bp_library.md'
