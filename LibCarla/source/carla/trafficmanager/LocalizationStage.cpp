@@ -4,7 +4,7 @@
 // This work is licensed under the terms of the MIT license.
 // For a copy, see <https://opensource.org/licenses/MIT>.
 
-#include "LocalizationStage.h"
+#include "carla/trafficmanager/LocalizationStage.h"
 #include "carla/client/DebugHelper.h"
 
 namespace carla {

@@ -36,7 +36,7 @@ TrafficManager::TrafficManager(uint16_t port) {
 
 
 	/// Get Local IP details
-	auto GetLocalIP = [=](const uint16_t &sport)-> std::pair<std::string, uint16_t>
+	auto GetLocalIP = [=](const uint16_t sport)-> std::pair<std::string, uint16_t>
 	{
 		int err;
 		std::pair<std::string, uint16_t> localIP;
