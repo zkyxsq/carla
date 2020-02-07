@@ -4,7 +4,7 @@
 // This work is licensed under the terms of the MIT license.
 // For a copy, see <https://opensource.org/licenses/MIT>.
 
-#include "carla/trafficmanager/detail/MotionPlannerStage.h"
+#include "carla/trafficmanager/MotionPlannerStage.h"
 
 namespace carla {
 namespace traffic_manager {
@@ -64,6 +64,10 @@ namespace PlannerConstants {
          ++i) {
 
       const LocalizationToPlannerData &localization_data = localization_frame->at(i);
+      if (!localization_data.actor->IsAlive()) {
+        continue;
+      }
+
       const Actor actor = localization_data.actor;
       const float current_deviation = localization_data.deviation;
       const float current_distance = localization_data.distance;
@@ -129,7 +133,7 @@ namespace PlannerConstants {
       // Constructing the actuation signal.
 
       PlannerToControlData &message = current_control_frame->at(i);
-      message.actor_id = actor_id;
+      message.actor = actor;
       message.throttle = actuation_signal.throttle;
       message.brake = actuation_signal.brake;
       message.steer = actuation_signal.steer;

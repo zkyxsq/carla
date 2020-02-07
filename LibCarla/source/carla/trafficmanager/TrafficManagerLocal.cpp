@@ -26,11 +26,8 @@ TrafficManagerLocal::TrafficManagerLocal
 		, episodeProxyTM(episodeProxy)
 		, debug_helper(carla::client::DebugHelper{episodeProxyTM})
 {
-
-	using WorldMap = carla::SharedPtr<cc::Map>;
-	const WorldMap world_map = episodeProxyTM.Lock()->GetCurrentMap();
-	const RawNodeList raw_dense_topology = world_map->GenerateWaypoints(0.1f);
-	local_map = std::make_shared<traffic_manager::InMemoryMap>(raw_dense_topology);
+	const carla::SharedPtr<cc::Map> world_map = episodeProxyTM.Lock()->GetCurrentMap();
+	local_map = std::make_shared<traffic_manager::InMemoryMap>(world_map);
 	local_map->SetUp();
 
 	parameters.SetGlobalPercentageSpeedDifference(perc_difference_from_limit);
