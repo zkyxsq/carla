@@ -91,13 +91,19 @@ def main():
     traffic_manager = client.get_trafficmanager(args.tm_port)
     world = client.get_world()
 
+    synchronous_master = False
+
     try:
 
         if args.synchronous:
             settings = world.get_settings()
-            settings.synchronous_mode = True
-            settings.fixed_delta_seconds = 0.05
-            world.apply_settings(settings)
+            if not settings.synchronous_mode:
+                synchronous_master = True
+                settings.synchronous_mode = True
+                settings.fixed_delta_seconds = 0.05
+                world.apply_settings(settings)
+            else:
+                synchronous_master = False
 
         blueprints = world.get_blueprint_library().filter(args.filterv)
         blueprintsWalkers = world.get_blueprint_library().filter(args.filterw)
@@ -207,7 +213,7 @@ def main():
         all_actors = world.get_actors(all_id)
 
         # wait for a tick to ensure client receives the last transform of the walkers we have just created
-        if args.synchronous:
+        if not args.synchronous or not synchronous_master:
             world.wait_for_tick()
         else:
             world.tick()
@@ -226,16 +232,16 @@ def main():
         print('spawned %d vehicles and %d walkers, press Ctrl+C to exit.' % (len(vehicles_list), len(walkers_list)))
 
         while True:
-            if args.synchronous:
-                world.tick()
+            if args.synchronous and synchronous_master:
                 traffic_manager.synchronous_tick()
+                world.tick()
                 time.sleep(0.05)
             else:
                 world.wait_for_tick()
 
     finally:
 
-        if args.synchronous:
+        if args.synchronous and synchronous_master:
             settings = world.get_settings()
             settings.synchronous_mode = False
             settings.fixed_delta_seconds = 0
