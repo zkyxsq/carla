@@ -69,6 +69,12 @@ def main():
         default='walker.pedestrian.*',
         help='pedestrians filter (default: "walker.pedestrian.*")')
     argparser.add_argument(
+        '-tm_p', '--tm_port',
+        metavar='P',
+        default=8000,
+        type=int,
+        help='port to communicate with TM (default: 8000)')
+    argparser.add_argument(
         '--synchronous',
         action='store_true',
         help='Synchronous mode execution')
@@ -82,8 +88,7 @@ def main():
     client = carla.Client(args.host, args.port)
     client.set_timeout(10.0)
 
-    synchronous_mode = False
-    traffic_manager = client.get_trafficmanager()
+    traffic_manager = client.get_trafficmanager(args.tm_port)
     world = client.get_world()
 
     try:
