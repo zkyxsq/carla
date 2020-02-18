@@ -68,6 +68,16 @@ def main():
         metavar='PATTERN',
         default='walker.pedestrian.*',
         help='pedestrians filter (default: "walker.pedestrian.*")')
+    argparser.add_argument(
+        '-tm_p', '--tm_port',
+        metavar='P',
+        default=8000,
+        type=int,
+        help='port to communicate with TM (default: 8000)')
+    argparser.add_argument(
+        '--synchronous',
+        action='store_true',
+        help='Synchronous mode execution')
     args = argparser.parse_args()
 
     logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
@@ -78,9 +88,24 @@ def main():
     client = carla.Client(args.host, args.port)
     client.set_timeout(10.0)
 
+    traffic_manager = client.get_trafficmanager(args.tm_port)
+    world = client.get_world()
+
+    synchronous_master = False
+
     try:
 
-        world = client.get_world()
+        if args.synchronous:
+            traffic_manager.set_synchronous_mode(True)
+            settings = world.get_settings()
+            if not settings.synchronous_mode:
+                synchronous_master = True
+                settings.synchronous_mode = True
+                settings.fixed_delta_seconds = 0.05
+                world.apply_settings(settings)
+            else:
+                synchronous_master = False
+
         blueprints = world.get_blueprint_library().filter(args.filterv)
         blueprintsWalkers = world.get_blueprint_library().filter(args.filterw)
 
@@ -189,7 +214,10 @@ def main():
         all_actors = world.get_actors(all_id)
 
         # wait for a tick to ensure client receives the last transform of the walkers we have just created
-        world.wait_for_tick()
+        if not args.synchronous or not synchronous_master:
+            world.wait_for_tick()
+        else:
+            world.tick()
 
         # 5. initialize each controller and set target to walk to (list is [controler, actor, controller, actor ...])
         # set how many pedestrians can cross the road
@@ -205,9 +233,20 @@ def main():
         print('spawned %d vehicles and %d walkers, press Ctrl+C to exit.' % (len(vehicles_list), len(walkers_list)))
 
         while True:
-            world.wait_for_tick()
+            if args.synchronous and synchronous_master:
+                traffic_manager.synchronous_tick()
+                world.tick()
+                time.sleep(0.05)
+            else:
+                world.wait_for_tick()
 
     finally:
+
+        if args.synchronous and synchronous_master:
+            settings = world.get_settings()
+            settings.synchronous_mode = False
+            settings.fixed_delta_seconds = 0
+            world.apply_settings(settings)
 
         print('\ndestroying %d vehicles' % len(vehicles_list))
         client.apply_batch([carla.command.DestroyActor(x) for x in vehicles_list])
