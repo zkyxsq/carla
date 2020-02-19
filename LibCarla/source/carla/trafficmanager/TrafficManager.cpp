@@ -80,58 +80,6 @@ void TrafficManager::CreateTrafficManagerServer(
     carla::client::detail::EpisodeProxy episodeProxy,
     uint16_t port) {
 
-  // Get local IP details.
-  auto GetLocalIP = [=](const uint16_t sport)-> std::pair<std::string, uint16_t> {
-    std::pair<std::string, uint16_t> localIP;
-    int sock = socket(AF_INET, SOCK_DGRAM, 0);
-    if(sock == INVALID_INDEX) {
-      #if DEBUG_PRINT_TM
-      std::cout << "Error number 1: " << errno << std::endl;
-      std::cout << "Error message: " << strerror(errno) << std::endl;
-      #endif
-    } else {
-      int err;
-      sockaddr_in loopback;
-      std::memset(&loopback, 0, sizeof(loopback));
-      loopback.sin_family = AF_INET;
-      loopback.sin_addr.s_addr = INADDR_LOOPBACK;
-      loopback.sin_port = htons(9);
-      err = connect(sock, reinterpret_cast<sockaddr*>(&loopback), sizeof(loopback));
-      if(err == INVALID_INDEX) {
-        #if DEBUG_PRINT_TM
-        std::cout << "Error number 2: " << errno << std::endl;
-        std::cout << "Error message: " << strerror(errno) << std::endl;
-        #endif
-      } else {
-        socklen_t addrlen = sizeof(loopback);
-        err = getsockname(sock, reinterpret_cast<struct sockaddr*> (&loopback), &addrlen);
-        if(err == INVALID_INDEX) {
-          #if DEBUG_PRINT_TM
-          std::cout << "Error number 3: " << errno << std::endl;
-          std::cout << "Error message: " << strerror(errno) << std::endl;
-          #endif
-        } else {
-          char buffer[IP_DATA_BUFFER_SIZE];
-          const char* p = inet_ntop(AF_INET, &loopback.sin_addr, buffer, IP_DATA_BUFFER_SIZE);
-          if(p != NULL) {
-            localIP = std::pair<std::string, uint16_t>(std::string(buffer), sport);
-          } else {
-            #if DEBUG_PRINT_TM
-            std::cout << "Error number 4: " << errno << std::endl;
-            std::cout << "Error message: " << strerror(errno) << std::endl;
-            #endif
-          }
-        }
-      }
-      #ifdef _WIN32
-        closesocket(sock);
-      #else
-        close(sock);
-      #endif
-    }
-    return localIP;
-  };
-
   /// Set default port
   uint16_t RPCportTM = port;
 
@@ -155,7 +103,7 @@ void TrafficManager::CreateTrafficManagerServer(
     RPCportTM);
 
   /// Get TM server info (Local IP & PORT)
-  serverTM = GetLocalIP(RPCportTM);
+  serverTM =  TrafficManagerUtil::GetLocalIP(RPCportTM);
 
   /// Set this client as the TM to server
   episodeProxy.Lock()->AddTrafficManagerRunning(serverTM);
