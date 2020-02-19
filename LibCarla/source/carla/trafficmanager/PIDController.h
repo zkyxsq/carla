@@ -28,6 +28,7 @@ namespace traffic_manager {
     float deviation;
     float distance;
     float velocity;
+    float horizontal_velocity;
     TimeInstance time_instance;
     float deviation_integral;
     float distance_integral;
@@ -50,6 +51,7 @@ namespace traffic_manager {
         StateEntry previous_state,
         float current_velocity,
         float target_velocity,
+        float horizontal_velocity,
         float angular_deviation,
         float distance,
         TimeInstance current_time);
@@ -60,7 +62,8 @@ namespace traffic_manager {
         StateEntry present_state,
         StateEntry previous_state,
         const std::vector<float> &longitudinal_parameters,
-        const std::vector<float> &lateral_parameters) const;
+        const std::vector<float> &lateral_parameters,
+        const float max_steer_angle) const;
 
   };
 

@@ -30,6 +30,7 @@ namespace PIDControllerConstants {
       StateEntry previous_state,
       float current_velocity,
       float target_velocity,
+      float horizontal_velocity,
       float angular_deviation,
       float distance,
       TimeInstance current_time) {
@@ -37,6 +38,7 @@ namespace PIDControllerConstants {
     traffic_manager::StateEntry current_state = {
       angular_deviation, distance,
       (current_velocity - target_velocity) / target_velocity,
+      horizontal_velocity,
       current_time,
       0.0f,
       0.0f,
@@ -44,8 +46,8 @@ namespace PIDControllerConstants {
     };
 
     // Calculating integrals.
-    current_state.deviation_integral = angular_deviation * dt + previous_state.deviation_integral;
-    current_state.distance_integral = distance * dt + previous_state.distance_integral;
+    // current_state.deviation_integral = angular_deviation * dt + previous_state.deviation_integral;
+    // current_state.distance_integral = distance * dt + previous_state.distance_integral;
     current_state.velocity_integral = dt * current_state.velocity + previous_state.velocity_integral;
 
     return current_state;
@@ -55,7 +57,8 @@ namespace PIDControllerConstants {
       StateEntry present_state,
       StateEntry previous_state,
       const std::vector<float> &longitudinal_parameters,
-      const std::vector<float> &lateral_parameters) const {
+      const std::vector<float> &lateral_parameters,
+      const float max_steer_angle) const {
 
     // Longitudinal PID calculation.
     const float expr_v =
@@ -75,16 +78,15 @@ namespace PIDControllerConstants {
       brake = std::min(expr_v, MAX_BRAKE);
     }
 
-    // Lateral PID calculation.
-    float steer =
-        lateral_parameters[0] * present_state.deviation +
-        lateral_parameters[1] * present_state.deviation_integral +
-        lateral_parameters[2] * (present_state.deviation -
-        previous_state.deviation) / dt;
+    // Lateral (Hoffmann-Stanley) controller calculation.
+    float steer_angle = present_state.deviation +
+                        std::atan((1.0f + 0*lateral_parameters.front()) * present_state.distance / (present_state.horizontal_velocity + 0.001));
+    // Accounting for change of co-ordinate system from carla to unreal by multiplying with -1.
+    // Also, converting calculated steer angle to fraction of maximum allowed.
+    float steer_actuation_signal = (steer_angle/max_steer_angle);
+    steer_actuation_signal = std::max(-0.8f, std::min(steer_actuation_signal, 0.8f));
 
-    steer = std::max(-0.8f, std::min(steer, 0.8f));
-
-    return ActuationSignal{throttle, brake, steer};
+    return ActuationSignal{throttle, brake, steer_actuation_signal};
   }
 
 } // namespace traffic_manager

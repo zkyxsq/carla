@@ -37,8 +37,10 @@ namespace traffic_manager {
   /// Type of data sent by the localization stage to the motion planner stage.
   struct LocalizationToPlannerData {
     Actor actor;
+    float max_steer_angle;
     float deviation;
     float distance;
+    float horizontal_velocity;
     bool approaching_true_junction;
   };
 

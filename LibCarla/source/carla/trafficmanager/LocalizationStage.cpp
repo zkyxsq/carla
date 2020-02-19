@@ -14,8 +14,8 @@ namespace LocalizationConstants {
 
   static const float WAYPOINT_TIME_HORIZON = 5.0f;
   static const float MINIMUM_HORIZON_LENGTH = 30.0f;
-  static const float TARGET_WAYPOINT_TIME_HORIZON = 0.5f;
-  static const float TARGET_WAYPOINT_HORIZON_LENGTH = 5.0f;
+  // static const float TARGET_WAYPOINT_TIME_HORIZON = 0.5f;
+  // static const float TARGET_WAYPOINT_HORIZON_LENGTH = 5.0f;
   static const float MINIMUM_JUNCTION_LOOK_AHEAD = 10.0f;
   static const float HIGHWAY_SPEED = 50.0f / 3.6f;
   static const float MINIMUM_LANE_CHANGE_DISTANCE = 50.0f;
@@ -85,6 +85,7 @@ namespace LocalizationConstants {
     for (uint64_t i = 0u; i < actor_list.size(); ++i) {
 
       const Actor vehicle = actor_list.at(i);
+      const auto vehicle_reference = boost::static_pointer_cast<cc::Vehicle>(vehicle);
       const ActorId actor_id = vehicle->GetId();
       const cg::Location vehicle_location = vehicle->GetLocation();
       const float vehicle_velocity = vehicle->GetVelocity().Length();
@@ -179,31 +180,64 @@ namespace LocalizationConstants {
       // Updating geodesic grid position for actor.
       track_traffic.UpdateGridPosition(actor_id, waypoint_buffer);
 
-      // Generating output.
-      const float target_point_distance = std::max(std::ceil(vehicle_velocity * TARGET_WAYPOINT_TIME_HORIZON),
-          TARGET_WAYPOINT_HORIZON_LENGTH);
+      // Generating controller inputs.
+
+      // Finding the centres of front both the axles.
+      carla::rpc::VehiclePhysicsControl vehicle_physics = vehicle_reference->GetPhysicsControl();
+      using Wheel = carla::rpc::WheelPhysicsControl;
+      std::vector<Wheel> wheels = vehicle_physics.GetWheels();
+      Wheel front_left = wheels.at(0);
+      Wheel front_right = wheels.at(1);
+      Wheel back_left = wheels.at(2);
+      Wheel back_right = wheels.at(3);
+      cg::Location front_axle_position = cg::Location(0.01 *(front_left.position + front_right.position)/2.0f);
+      cg::Location back_axle_position = cg::Location(0.01 * (back_left.position + back_right.position)/2.0f);
+
+      // Finding the closest point on the path to the center of the front axle.
       SimpleWaypointPtr target_waypoint = waypoint_buffer.front();
+      float minimum_distance = std::numeric_limits<float>::infinity();
+      const float vehicle_length = vehicle_reference->GetBoundingBox().extent.x * 2.0f;
       for (uint64_t j = 0u;
           (j < waypoint_buffer.size()) &&
-          (waypoint_buffer.front()->DistanceSquared(target_waypoint)
-          < std::pow(target_point_distance, 2));
+          (waypoint_buffer.front()->DistanceSquared(waypoint_buffer.at(j))
+          < std::pow(vehicle_length, 2));
           ++j) {
-        target_waypoint = waypoint_buffer.at(j);
+        cg::Location axle_leveled_position = front_axle_position;
+        axle_leveled_position.z = waypoint_buffer.at(j)->GetLocation().z;
+        float current_distance_to_axle = waypoint_buffer.at(j)->DistanceSquared(axle_leveled_position);
+        if (current_distance_to_axle < minimum_distance)
+        {
+          target_waypoint = waypoint_buffer.at(j);
+          minimum_distance = current_distance_to_axle;
+        }
       }
-      const cg::Location target_location = target_waypoint->GetLocation();
-      float dot_product = DeviationDotProduct(vehicle, vehicle_location, target_location);
-      float cross_product = DeviationCrossProduct(vehicle, vehicle_location, target_location);
-      dot_product = 1.0f - dot_product;
-      if (cross_product < 0.0f) {
-        dot_product *= -1.0f;
-      }
+      minimum_distance = std::sqrt(minimum_distance);
+      front_axle_position.z = target_waypoint->GetLocation().z;
+      back_axle_position.z = target_waypoint->GetLocation().z;
 
-      float distance = 0.0f; // TODO: use in PID
+      // Horizontal velocity.
+      cg::Vector3D path_perpendicular = target_waypoint->GetLocation() - front_axle_position;
+      path_perpendicular = path_perpendicular.MakeUnitVector();
+      float horizontal_translation_velocity = cg::Math::Dot(vehicle->GetVelocity(), path_perpendicular);
+
+      cg::Vector3D z_vector(0.0f, 0.0f, 1.0f);
+      float angular_velocity = cg::Math::Dot(vehicle->GetAngularVelocity(), z_vector);
+      float horizontal_rotational_velocity = (front_axle_position.Distance(back_axle_position)) * angular_velocity;
+
+      // Angular deviation.
+      const cg::Vector3D path_vector = target_waypoint->GetForwardVector();
+      const cg::Vector3D heading_vector = vehicle->GetTransform().GetForwardVector();
+
+      float angular_deviation = std::acos(cg::Math::Dot(path_vector, heading_vector));
+      const float cross_z = heading_vector.x * path_vector.y - heading_vector.y * path_vector.x;
+      if (cross_z < 0.0f)
+      {
+        angular_deviation *= -1;
+      }
 
       // Filtering out false junctions on highways:
       // on highways, if there is only one possible path and the section is
       // marked as intersection, ignore it.
-      const auto vehicle_reference = boost::static_pointer_cast<cc::Vehicle>(vehicle);
       const float speed_limit = vehicle_reference->GetSpeedLimit();
       const float look_ahead_distance = std::max(2.0f * vehicle_velocity, MINIMUM_JUNCTION_LOOK_AHEAD);
 
@@ -253,8 +287,10 @@ namespace LocalizationConstants {
       // Editing output frames.
       LocalizationToPlannerData &planner_message = current_planner_frame->at(i);
       planner_message.actor = vehicle;
-      planner_message.deviation = dot_product;
-      planner_message.distance = distance;
+      planner_message.max_steer_angle = front_left.max_steer_angle;
+      planner_message.deviation = angular_deviation;
+      planner_message.distance = minimum_distance;
+      planner_message.horizontal_velocity = horizontal_translation_velocity + horizontal_rotational_velocity;
       planner_message.approaching_true_junction = approaching_junction;
 
       LocalizationToCollisionData &collision_message = current_collision_frame->at(i);

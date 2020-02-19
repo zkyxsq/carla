@@ -15,9 +15,10 @@
 #include <mutex>
 #include <unordered_map>
 
-#include "carla/StringUtil.h"
-
 #include "carla/client/Actor.h"
+#include "carla/client/detail/ActorVariant.h"
+#include "carla/client/detail/EpisodeProxy.h"
+#include "carla/client/detail/Simulator.h"
 #include "carla/client/Vehicle.h"
 #include "carla/geom/Location.h"
 #include "carla/geom/Math.h"
@@ -25,6 +26,7 @@
 #include "carla/geom/Vector3D.h"
 #include "carla/Memory.h"
 #include "carla/rpc/ActorId.h"
+#include "carla/StringUtil.h"
 
 #include "carla/trafficmanager/AtomicActorSet.h"
 #include "carla/trafficmanager/InMemoryMap.h"
@@ -34,10 +36,6 @@
 #include "carla/trafficmanager/PipelineStage.h"
 #include "carla/trafficmanager/SimpleWaypoint.h"
 #include "carla/trafficmanager/PerformanceDiagnostics.h"
-
-#include "carla/client/detail/Simulator.h"
-#include "carla/client/detail/EpisodeProxy.h"
-#include "carla/client/detail/ActorVariant.h"
 
 namespace carla {
 namespace traffic_manager {

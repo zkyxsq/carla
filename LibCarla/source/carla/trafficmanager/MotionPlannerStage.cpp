@@ -71,6 +71,8 @@ namespace PlannerConstants {
       const Actor actor = localization_data.actor;
       const float current_deviation = localization_data.deviation;
       const float current_distance = localization_data.distance;
+      const float horizontal_velocity = localization_data.horizontal_velocity;
+      const float max_steer_angle = localization_data.max_steer_angle;
 
       const ActorId actor_id = actor->GetId();
 
@@ -80,7 +82,7 @@ namespace PlannerConstants {
       const auto current_time = chr::system_clock::now();
 
       if (pid_state_map.find(actor_id) == pid_state_map.end()) {
-        const auto initial_state = StateEntry{0.0f, 0.0f, 0.0f, chr::system_clock::now(), 0.0f, 0.0f, 0.0f};
+        const auto initial_state = StateEntry{0.0f, 0.0f, 0.0f, 0.0f, chr::system_clock::now(), 0.0f, 0.0f, 0.0f};
         pid_state_map.insert({actor_id, initial_state});
       }
 
@@ -105,6 +107,7 @@ namespace PlannerConstants {
           previous_state,
           current_velocity,
           dynamic_target_velocity,
+          horizontal_velocity,
           current_deviation,
           current_distance,
           current_time);
@@ -114,7 +117,8 @@ namespace PlannerConstants {
           current_state,
           previous_state,
           longitudinal_parameters,
-          lateral_parameters);
+          lateral_parameters,
+          (static_cast<float>(M_PI) * max_steer_angle/ 180.0f));
 
       // In case of collision or traffic light
       if ((collision_frame != nullptr && collision_frame->at(i).hazard) ||
@@ -129,6 +133,12 @@ namespace PlannerConstants {
       // Updating PID state.
       StateEntry &state = pid_state_map.at(actor_id);
       state = current_state;
+
+      // debug_helper.DrawString(actor->GetLocation(),
+      //                         "Distance: " + std::to_string(current_distance)
+      //                         + " || Velocity " + std::to_string(horizontal_velocity)
+      //                         + " || Steer: " + std::to_string(actuation_signal.steer),
+      //                         false, {0u, 0u, 255u}, 0.1f);
 
       // Constructing the actuation signal.
       PlannerToControlData &message = current_control_frame->at(i);
