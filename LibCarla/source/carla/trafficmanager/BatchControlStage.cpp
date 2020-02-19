@@ -103,42 +103,38 @@ void BatchControlStage::DataSender() {
 
 bool BatchControlStage::RunStep() {
 
-  // Get step_execution_mutex lock.
+  /// Get step_execution_mutex lock.
   std::unique_lock<std::mutex> lock(step_execution_mutex);
 
-  // Get timeout value in milliseconds.
+  /// Get timeout value in milliseconds.
   double timeout = parameters.GetSynchronousModeTimeOutInMiliSecond();
 
-  // Get start time.
+  /// Get start time.
   auto st = std::chrono::high_resolution_clock::now();
 
-  // Set run set flag.
+  /// Set run set flag.
   run_step.store(true);
 
-  // Notify the sender thread.
+  /// Notify the sender thread.
   send_control_notifier.notify_one();
 
-  // Wait for service to finish.
+  /// Wait for service to finish.
   while (true) {
 
-    // Wait for signal.
-    step_execution_notifier.wait_for(lock, 1ms, [this]() { return !run_step.load(); });
+	  /// Wait for signal.
+	  step_execution_notifier.wait_for(lock, 1ms, [this]() { return !run_step.load(); });
 
-    // If time out occurred.
-    if (run_step.load()) {
+	  /// If data trasmission succesfull
+	  if (!run_step.load()) break;
 
-      // Get end time processing time.
-      auto en = std::chrono::high_resolution_clock::now();
+	  /// Get end time processing time.
+	  auto en = std::chrono::high_resolution_clock::now();
 
-      // Get time gap.
-      std::chrono::duration<double, std::milli> elapsed = en - st;
+	  /// Get time gap.
+	  std::chrono::duration<double, std::milli> elapsed = en - st;
 
-      // Return fail if time out happens.
-      if (elapsed.count() > timeout) return false;
-
-    } else {
-      break;
-    }
+	  /// Return fail if time out happens.
+	  if (elapsed.count() > timeout) return false;
   }
   return true;
 }
