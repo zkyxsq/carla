@@ -75,7 +75,7 @@ def main():
         type=int,
         help='port to communicate with TM (default: 8000)')
     argparser.add_argument(
-        '--synchronous',
+        '--sync',
         action='store_true',
         help='Synchronous mode execution')
     args = argparser.parse_args()
@@ -95,7 +95,12 @@ def main():
 
     try:
 
-        if args.synchronous:
+        traffic_manager = client.get_trafficmanager(args.tm_port)
+        world = client.get_world()
+
+        synchronous_master = False
+
+        if args.sync:
             traffic_manager.set_synchronous_mode(True)
             settings = world.get_settings()
             if not settings.synchronous_mode:
@@ -114,6 +119,7 @@ def main():
             blueprints = [x for x in blueprints if not x.id.endswith('isetta')]
             blueprints = [x for x in blueprints if not x.id.endswith('carlacola')]
             blueprints = [x for x in blueprints if not x.id.endswith('cybertruck')]
+            blueprints = [x for x in blueprints if not x.id.endswith('t2')]
 
         spawn_points = world.get_map().get_spawn_points()
         number_of_spawn_points = len(spawn_points)
@@ -214,9 +220,10 @@ def main():
         all_actors = world.get_actors(all_id)
 
         # wait for a tick to ensure client receives the last transform of the walkers we have just created
-        if not args.synchronous or not synchronous_master:
+        if not args.sync or not synchronous_master:
             world.wait_for_tick()
         else:
+            traffic_manager.synchronous_tick()
             world.tick()
 
         # 5. initialize each controller and set target to walk to (list is [controler, actor, controller, actor ...])
@@ -233,16 +240,15 @@ def main():
         print('spawned %d vehicles and %d walkers, press Ctrl+C to exit.' % (len(vehicles_list), len(walkers_list)))
 
         while True:
-            if args.synchronous and synchronous_master:
+            if args.sync and synchronous_master:
                 traffic_manager.synchronous_tick()
                 world.tick()
-                time.sleep(0.05)
             else:
                 world.wait_for_tick()
 
     finally:
 
-        if args.synchronous and synchronous_master:
+        if args.sync and synchronous_master:
             settings = world.get_settings()
             settings.synchronous_mode = False
             settings.fixed_delta_seconds = 0
