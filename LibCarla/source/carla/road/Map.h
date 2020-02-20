@@ -136,6 +136,14 @@ namespace road {
 
     const Junction* GetJunction(JuncId id) const;
 
+    const std::unordered_map<SignId, std::unique_ptr<Signal>>& GetSignals() const {
+      return _data.GetSignals();
+    }
+
+    const std::unordered_map<ContId, std::unique_ptr<Controller>>& GetControllers() const {
+      return _data.GetControllers();
+    }
+
 #ifdef LIBCARLA_WITH_GTEST
     MapData &GetMap() {
       return _data;
