@@ -91,12 +91,10 @@ void BatchControlStage::DataSender() {
 
       // Run asynchronous mode commands.
       episodeProxyBCS.Lock()->ApplyBatch(*commands.get(), false);
-    }
-  }
 
-  // Limiting updates to 100 frames per second.
-  if (!synch_mode) {
-    std::this_thread::sleep_for(10ms);
+      // Limiting updates to 100 frames per second.
+      std::this_thread::sleep_for(10ms);
+    }
   }
 }
 
@@ -136,6 +134,7 @@ bool BatchControlStage::RunStep() {
 	  /// Return fail if time out happens.
 	  if (elapsed.count() > timeout) return false;
   }
+
   return true;
 }
 
