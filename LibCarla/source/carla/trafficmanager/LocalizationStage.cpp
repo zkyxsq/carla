@@ -61,8 +61,8 @@ namespace LocalizationConstants {
     buffer_list = std::make_shared<BufferList>();
     // Initializing maximum idle time to null.
     maximum_idle_time = std::make_pair(nullptr, 0.0);
-    // Initializing srand.
-    srand(static_cast<unsigned>(time(NULL)));
+//    // Initializing srand.
+//    srand(static_cast<unsigned>(time(NULL)));
 
   }
 
@@ -141,6 +141,8 @@ namespace LocalizationConstants {
       if ((parameters.GetAutoLaneChange(vehicle) || force_lane_change) &&
           !front_waypoint->CheckJunction()) {
 
+      // debug_helper.DrawPoint(vehicle->GetLocation() + carla::geom::Location(0.0f,0.0f,2.0f), 0.1f, {0u, 255u, 0u}, 0.75f, false);
+
         SimpleWaypointPtr change_over_point = AssignLaneChange(
             vehicle, vehicle_location, force_lane_change, lane_change_direction);
 
@@ -159,12 +161,7 @@ namespace LocalizationConstants {
           <= std::pow(horizon_size, 2)) {
 
         std::vector<SimpleWaypointPtr> next_waypoints = waypoint_buffer.back()->GetNextWaypoint();
-        uint64_t selection_index = 0u;
-        // Pseudo-randomized path selection if found more than one choice.
-        if (next_waypoints.size() > 1) {
-          selection_index = static_cast<uint64_t>(rand()) % next_waypoints.size();
-        }
-        SimpleWaypointPtr next_wp = next_waypoints.at(selection_index);
+        SimpleWaypointPtr next_wp = getPossibleNextWayPoint(next_waypoints);
         if (next_wp == nullptr) {
           for (auto& wp: next_waypoints) {
             if (wp != nullptr) {
@@ -614,6 +611,77 @@ namespace LocalizationConstants {
     }
   }
 
+SimpleWaypointPtr LocalizationStage::getPossibleNextWayPoint(std::vector<SimpleWaypointPtr> &next_waypoints) {
+
+  /// Get last point
+  SimpleWaypointPtr leastTraveledPath =  next_waypoints.back();
+
+  /// If more than one possibility present
+  if (next_waypoints.size() > 1) {
+
+    double minTravelMeasure = std::numeric_limits<double>::max();;
+
+    /// For all waypoints find lowest traveled path
+    for (auto &wp : next_waypoints) {
+
+      /// Get lane info
+      auto segmId = local_map.GetSegmentId(wp);
+      double laneLt = local_map.GetLaneLength(wp);
+      double distance = laneVehicleMap[segmId] / laneLt;
+
+      // std::cout << "D-" << distance << " ";
+      /// Keep note of least traveled path
+      if(distance < minTravelMeasure) {
+        minTravelMeasure  = distance;
+        leastTraveledPath = wp;
+      }
+    }
+    // std::cout << std::endl;
+
+    /// Check any left lane present or not
+    auto lfLane = leastTraveledPath->GetLeftWaypoint();
+
+    /// Get left waypoint based lane
+    if(lfLane != NULL) {
+      /// Get lane info
+      auto segmId = local_map.GetSegmentId(lfLane);
+      double laneLt = local_map.GetLaneLength(lfLane);
+      double distance = laneVehicleMap[local_map.GetSegmentId(lfLane)] / laneLt;
+
+      /// Keep note of least traveled path
+      if(distance < minTravelMeasure) {
+        minTravelMeasure  = distance;
+        leastTraveledPath = lfLane;
+        std::cout << "Left lane seclected [" << std::get<0>(segmId) << ", " << std::get<1>(segmId) << ", "<< std::get<2>(segmId) << "]" << std::endl;
+      }
+    }
+
+    /// Check any right lane present or not
+    auto rtLane = leastTraveledPath->GetRightWaypoint();
+
+    /// Get right waypoint based lane
+    if(rtLane != NULL) {
+      /// Get lane info
+      auto segmId = local_map.GetSegmentId(rtLane);
+      double laneLt = local_map.GetLaneLength(rtLane);
+      double distance = laneVehicleMap[local_map.GetSegmentId(rtLane)] / laneLt;
+
+      /// Keep note of least traveled path
+      if(distance < minTravelMeasure) {
+        minTravelMeasure  = distance;
+        leastTraveledPath = rtLane;
+        std::cout << "Right lane seclected [" << std::get<0>(segmId) << ", " << std::get<1>(segmId) << ", "<< std::get<2>(segmId) << "]" << std::endl;
+      }
+    }
+
+    /// Set mintravel measure for the lane
+    laneVehicleMap[local_map.GetSegmentId(leastTraveledPath)] ++;
+  }
+
+  /// Return searched path
+  return leastTraveledPath;
+}
+
 SimpleWaypointPtr LocalizationStage::GetSafeLocationAfterJunction(const Vehicle &vehicle, Buffer &waypoint_buffer){
 
     // Get the length of the car
@@ -655,14 +723,8 @@ SimpleWaypointPtr LocalizationStage::GetSafeLocationAfterJunction(const Vehicle 
     // If it hasn't been found, extend the buffer
     if(safe_point == nullptr){
       while (waypoint_buffer.back()->CheckJunction()) {
-
-          std::vector<SimpleWaypointPtr> next_waypoints = waypoint_buffer.back()->GetNextWaypoint();
-          uint64_t selection_index = 0u;
-          if (next_waypoints.size() > 1) {
-            selection_index = static_cast<uint64_t>(rand()) % next_waypoints.size();
-          }
-
-          waypoint_buffer.push_back(next_waypoints.at(selection_index));
+        std::vector<SimpleWaypointPtr> next_waypoints = waypoint_buffer.back()->GetNextWaypoint();
+          waypoint_buffer.push_back(getPossibleNextWayPoint(next_waypoints));
         }
       // Save the last one
       safe_point = waypoint_buffer.back();
@@ -685,19 +747,12 @@ SimpleWaypointPtr LocalizationStage::GetSafeLocationAfterJunction(const Vehicle 
 
     // If it hasn't been found, extend the buffer
     if(final_point == nullptr){
-      while (safe_point->Distance(waypoint_buffer.back()->GetLocation()) < safe_distance) {
-
-        // Record the last point as a safe one and save it
-        std::vector<SimpleWaypointPtr> next_waypoints = waypoint_buffer.back()->GetNextWaypoint();
-        uint64_t selection_index = 0u;
-        // Pseudo-randomized path selection if found more than one choice.
-        if (next_waypoints.size() > 1) {
-          selection_index = static_cast<uint64_t>(rand()) % next_waypoints.size();
-        }
-
-        waypoint_buffer.push_back(next_waypoints.at(selection_index));
-      }
-      final_point = waypoint_buffer.back();
+    // Record the last point as a safe one and save it
+    while (safe_point->Distance(waypoint_buffer.back()->GetLocation()) < safe_distance) {
+      std::vector<SimpleWaypointPtr> next_waypoints = waypoint_buffer.back()->GetNextWaypoint();
+      waypoint_buffer.push_back(getPossibleNextWayPoint(next_waypoints));
+    }
+    final_point = waypoint_buffer.back();
     }
 
     return final_point;

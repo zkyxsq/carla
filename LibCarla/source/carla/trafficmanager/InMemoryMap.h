@@ -50,62 +50,61 @@ namespace crd = carla::road;
 
   private:
 
-    /// Object to hold the world map received by the constructor.
-    WorldMap _world_map;
-    /// Structure to hold all custom waypoint objects after interpolation of
-    /// sparse topology.
-    NodeList dense_topology;
-    /// Grid localization map for all waypoints in the system.
-    WaypointGrid waypoint_grid;
-    /// Larger localization map for all waypoints to be used for localizing pedestrians.
-    WaypointGrid ped_waypoint_grid;
-    /// Geodesic grid topology.
-    std::unordered_map<GeoGridId, cg::Location> geodesic_grid_center;
+  /// Object to hold the world map received by the constructor.
+  WorldMap _world_map;
+  /// Structure to hold all custom waypoint objects after interpolation of
+  /// sparse topology.
+  NodeList dense_topology;
+  /// Grid localization map for all waypoints in the system.
+  WaypointGrid waypoint_grid;
+  /// Larger localization map for all waypoints to be used for localizing pedestrians.
+  WaypointGrid ped_waypoint_grid;
+  /// Geodesic grid topology.
+  std::unordered_map<GeoGridId, cg::Location> geodesic_grid_center;
 
+  /// Keep segment details
+  SegmentMap segment_map;
   public:
 
-    InMemoryMap(WorldMap world_map);
-    ~InMemoryMap();
+  InMemoryMap(WorldMap world_map);
+  ~InMemoryMap();
 
-    /// This method constructs the local map with a resolution of
-    /// sampling_resolution.
-    void SetUp();
+  /// This method constructs the local map with a resolution of
+  /// sampling_resolution.
+  void SetUp();
 
-    /// Computes the segment id of a given waypoint.
-    ///
-    /// The Id takes into account OpenDrive's road Id, lane Id and Section Id.
-    SegmentId GetSegmentId(const WaypointPtr &wp) const;
-    SegmentId GetSegmentId(const SimpleWaypointPtr &swp) const;
+  /// Computes the segment id of a given waypoint.
+  ///
+  /// The Id takes into account OpenDrive's road Id, lane Id and Section Id.
+  SegmentId GetSegmentId(const WaypointPtr &wp) const;
+  SegmentId GetSegmentId(const SimpleWaypointPtr &swp) const;
 
-    /// This method returns the closest waypoint to a given location on the map.
-    SimpleWaypointPtr GetWaypoint(const cg::Location &location) const;
+  /// It is the simple waypoint count for the lane
+  /// (To Do:: actual pysical lane length)
+  double GetLaneLength(const SimpleWaypointPtr &swp) const;
 
-    /// This method returns closest waypoint in the vicinity of the given co-ordinates.
-    SimpleWaypointPtr GetWaypointInVicinity(cg::Location location);
-    SimpleWaypointPtr GetPedWaypoint(cg::Location location);
+  /// This method returns the closest waypoint to a given location on the map.
+  SimpleWaypointPtr GetWaypoint(const cg::Location &location) const;
 
-    /// This method returns the full list of discrete samples of the map in the
-    /// local cache.
-    NodeList GetDenseTopology() const;
+  /// This method returns closest waypoint in the vicinity of the given co-ordinates.
+  SimpleWaypointPtr GetWaypointInVicinity(cg::Location location);
+  SimpleWaypointPtr GetPedWaypoint(cg::Location location);
 
-    void MakeGeodesiGridCenters();
-    cg::Location GetGeodesicGridCenter(GeoGridId ggid);
+  /// This method returns the full list of discrete samples of the map in the
+  /// local cache.
+  NodeList GetDenseTopology() const;
+
+  void MakeGeodesiGridCenters();
+  cg::Location GetGeodesicGridCenter(GeoGridId ggid);
 
   private:
+  /// This method is used to find and place lane change links.
+  void FindAndLinkLaneChange(SimpleWaypointPtr reference_waypoint);
 
-    /// Method to generate the grid ids for given co-ordinates.
-    std::pair<int, int> MakeGridId(float x, float y, bool vehicle_or_pedestrian);
-
-    /// Method to generate map key for waypoint_grid.
-    std::string MakeGridKey(std::pair<int, int> gird_id);
-
-    /// This method is used to find and place lane change links.
-    void FindAndLinkLaneChange(SimpleWaypointPtr reference_waypoint);
-
-    std::vector<SimpleWaypointPtr> GetSuccessors(const SegmentId segment_id,
-    const SegmentTopology &segment_topology, const SegmentMap &segment_map);
-    std::vector<SimpleWaypointPtr> GetPredecessors(const SegmentId segment_id,
-    const SegmentTopology &segment_topology, const SegmentMap &segment_map);
+  std::vector<SimpleWaypointPtr> GetSuccessors(const SegmentId segment_id,
+  const SegmentTopology &segment_topology);
+  std::vector<SimpleWaypointPtr> GetPredecessors(const SegmentId segment_id,
+  const SegmentTopology &segment_topology);
   };
 
 } // namespace traffic_manager
