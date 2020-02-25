@@ -49,7 +49,9 @@ nav:
   - 'Model vehicles': 'how_to_model_vehicles.md'
 - ROS bridge:
   - 'ROS bridge installation': 'ros_installation.md'
-  - 'Supported features': 'ros_topics_ref.md'
+  - 'Messages reference': 'ros_msgs.md'
+  - 'Launch reference': 'ros_launchs.md'
+  #- 'Supported features': 'ros_topics_ref.md'
 - Contributing:
   - 'Contribution guidelines': 'CONTRIBUTING.md'
   - 'Coding standard': 'coding_standard.md'
