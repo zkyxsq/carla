@@ -62,8 +62,9 @@ namespace crd = carla::road;
   /// Geodesic grid topology.
   std::unordered_map<GeoGridId, cg::Location> geodesic_grid_center;
 
-  /// Keep segment details
-  SegmentMap segment_map;
+  /// Keep segment distance details (count of way points)
+  std::map<SegmentId, double> segmentLength;
+
   public:
 
   InMemoryMap(WorldMap world_map);
@@ -102,9 +103,9 @@ namespace crd = carla::road;
   void FindAndLinkLaneChange(SimpleWaypointPtr reference_waypoint);
 
   std::vector<SimpleWaypointPtr> GetSuccessors(const SegmentId segment_id,
-  const SegmentTopology &segment_topology);
+  const SegmentTopology &segment_topology, SegmentMap &segment_map);
   std::vector<SimpleWaypointPtr> GetPredecessors(const SegmentId segment_id,
-  const SegmentTopology &segment_topology);
+  const SegmentTopology &segment_topology, SegmentMap &segment_map);
   };
 
 } // namespace traffic_manager

@@ -44,11 +44,11 @@ SegmentId InMemoryMap::GetSegmentId(const SimpleWaypointPtr &swp) const {
 }
 
 double InMemoryMap::GetLaneLength(const SimpleWaypointPtr &swp) const {
-  return segment_map.at(GetSegmentId(swp)).size();
+  return segmentLength.at(GetSegmentId(swp));
 }
 
 std::vector<SimpleWaypointPtr> InMemoryMap::GetSuccessors(const SegmentId segment_id,
-    const SegmentTopology &segment_topology) {
+    const SegmentTopology &segment_topology, SegmentMap &segment_map) {
   std::vector<SimpleWaypointPtr> result;
   if (segment_topology.find(segment_id) == segment_topology.end()) {
     return result;
@@ -56,7 +56,7 @@ std::vector<SimpleWaypointPtr> InMemoryMap::GetSuccessors(const SegmentId segmen
 
   for (const auto &successor_segment_id : segment_topology.at(segment_id).second) {
     if (segment_map.find(successor_segment_id) == segment_map.end()) {
-      auto successors = GetSuccessors(successor_segment_id, segment_topology);
+      auto successors = GetSuccessors(successor_segment_id, segment_topology, segment_map);
       result.insert(result.end(), successors.begin(), successors.end());
     } else {
       result.emplace_back(segment_map.at(successor_segment_id).front());
@@ -66,7 +66,7 @@ std::vector<SimpleWaypointPtr> InMemoryMap::GetSuccessors(const SegmentId segmen
 }
 
 std::vector<SimpleWaypointPtr> InMemoryMap::GetPredecessors(const SegmentId segment_id,
-    const SegmentTopology &segment_topology) {
+    const SegmentTopology &segment_topology, SegmentMap &segment_map) {
   std::vector<SimpleWaypointPtr> result;
   if (segment_topology.find(segment_id) == segment_topology.end()) {
     return result;
@@ -74,7 +74,7 @@ std::vector<SimpleWaypointPtr> InMemoryMap::GetPredecessors(const SegmentId segm
 
   for (const auto &predecessor_segment_id : segment_topology.at(segment_id).first) {
     if (segment_map.find(predecessor_segment_id) == segment_map.end()) {
-      auto predecessors = GetPredecessors(predecessor_segment_id, segment_topology);
+      auto predecessors = GetPredecessors(predecessor_segment_id, segment_topology, segment_map);
       result.insert(result.end(), predecessors.begin(), predecessors.end());
     } else {
       result.emplace_back(segment_map.at(predecessor_segment_id).back());
@@ -130,7 +130,7 @@ void InMemoryMap::SetUp() {
   }
 
   /// Clear any previopus data
-  segment_map.clear();
+  SegmentMap segment_map;
 
   // 2. Consuming the raw dense topology from cc::Map into SimpleWaypoints.
   auto raw_dense_topology = _world_map->GenerateWaypoints(TOPOLOGY_DISTANCE);
@@ -218,8 +218,8 @@ void InMemoryMap::SetUp() {
     SegmentId segment_id = segment.first;
     auto &segment_waypoints = segment.second;
 
-    auto successors = GetSuccessors(segment_id, segment_topology);
-    auto predecessors = GetPredecessors(segment_id, segment_topology);
+    auto successors = GetSuccessors(segment_id, segment_topology, segment_map);
+    auto predecessors = GetPredecessors(segment_id, segment_topology, segment_map);
 
     segment_waypoints.front()->SetPreviousWaypoint(predecessors);
     segment_waypoints.back()->SetNextWaypoint(successors);
@@ -250,6 +250,12 @@ void InMemoryMap::SetUp() {
   }
 
   MakeGeodesiGridCenters();
+
+
+  /// Keep segment distance details
+  for (auto &segment : segment_map) {
+	  segmentLength[segment.first] = segment.second.size();
+  }
 }
 
 SimpleWaypointPtr InMemoryMap::GetWaypointInVicinity(cg::Location location) {
