@@ -1532,7 +1532,18 @@ def game_loop(args):
 
         # Game loop
         clock = pygame.time.Clock()
+        world_new,current_town = world._get_data_from_carla()
         while True:
+            world_new,new_town = world._get_data_from_carla()
+            if new_town.name != current_town.name:
+               input_control = InputControl(TITLE_INPUT)
+               hud = HUD(TITLE_HUD, args.width, args.height)
+               world = World(TITLE_WORLD, args, timeout=2.0)
+               input_control.start(hud, world)
+               hud.start()
+               world.start(hud,input_control)
+               current_town = new_town
+
             clock.tick_busy_loop(60)
 
             # Tick all modules
