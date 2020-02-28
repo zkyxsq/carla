@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Computer Vision Center (CVC) at the Universitat Autonoma
+// Copyright (c) 2020 Computer Vision Center (CVC) at the Universitat Autonoma
 // de Barcelona (UAB).
 //
 // This work is licensed under the terms of the MIT license.
@@ -13,15 +13,6 @@
 #include <unordered_set>
 #include <vector>
 
-#if _WIN32
-  #include <winsock2.h>   ///< socket
-  #include <Ws2tcpip.h>
-#else
-  #include <sys/socket.h> ///< socket
-  #include <netinet/in.h> ///< sockaddr_in
-  #include <arpa/inet.h>  ///< getsockname
-  #include <unistd.h>     ///< close
-#endif
 #include "carla/client/Actor.h"
 #include "carla/client/BlueprintLibrary.h"
 #include "carla/client/Map.h"
@@ -31,6 +22,7 @@
 #include "carla/geom/Transform.h"
 #include "carla/Logging.h"
 #include "carla/Memory.h"
+#include "carla/Sockets.h"
 
 #include "carla/trafficmanager/AtomicActorSet.h"
 #include "carla/trafficmanager/AtomicMap.h"
@@ -61,7 +53,7 @@ class TrafficManager {
 public:
   /// Public constructor for singleton life cycle management.
   explicit TrafficManager(
-    carla::client::detail::EpisodeProxy episodeProxy,
+    carla::client::detail::EpisodeProxy episode_proxy,
     uint16_t port = TM_DEFAULT_PORT);
 
   TrafficManager(const TrafficManager& other) {
