@@ -12,6 +12,8 @@ namespace traffic_manager {
 namespace PlannerConstants {
 
   static const float HIGHWAY_SPEED = 50.0f / 3.6f;
+  static const float BRAKE_GAIN = 0.5f;
+  static const float BRAKE_TIME_LIMIT = 1.0f;
 
 } // namespace PlannerConstants
 
@@ -116,14 +118,47 @@ namespace PlannerConstants {
           longitudinal_parameters,
           lateral_parameters);
 
-      // In case of collision or traffic light
-      if ((collision_frame != nullptr && collision_frame->at(i).hazard) ||
-          (traffic_light_frame != nullptr && traffic_light_frame->at(i).traffic_light_hazard)) {
+
+      CollisionToPlannerData& collision_data = collision_frame->at(i);
+      // In case of traffic light hazard.
+      if (traffic_light_frame != nullptr && traffic_light_frame->at(i).traffic_light_hazard) {
 
         current_state.deviation_integral = 0.0f;
         current_state.velocity_integral = 0.0f;
         actuation_signal.throttle = 0.0f;
         actuation_signal.brake = 1.0f;
+
+      }
+      // In case of collision hazard.
+      else if ((collision_frame != nullptr && collision_data.hazard)) {
+
+        float relative_velocity =  current_velocity - collision_data.other_vehicle_velocity;
+        if (relative_velocity > 0.0f)
+        {
+          current_state.deviation_integral = 0.0f;
+          current_state.velocity_integral = 0.0f;
+          // More improvement: implement a simple P controller to reduce throttle
+          // instead of directly setting it to 0;
+          actuation_signal.throttle = 0.0f;
+
+          float time_to_target = collision_data.distance_to_other_vehicle/relative_velocity;
+          if (time_to_target < BRAKE_TIME_LIMIT)
+          {
+            // Relationship between initial velocity (u), final velocity (v),
+            // acceleration (a) and distance travelled (s) : v^2 = u^2 + 2as
+            double target_deceleration = std::pow(relative_velocity, 2)/(2.0f * collision_data.distance_to_other_vehicle);
+
+            cg::Vector3D current_acceleration = actor->GetAcceleration();
+            cg::Vector3D reverse_heading_vector = -1* actor->GetTransform().GetForwardVector();
+            float current_deceleration = cg::Math::Dot(current_acceleration, reverse_heading_vector);
+
+            // Simple P controller to determine braking fraction to reach target acceleration.
+            actuation_signal.brake = static_cast<float>(BRAKE_GAIN*((target_deceleration-current_deceleration)/target_deceleration));
+            actuation_signal.brake = std::max(actuation_signal.brake, 1.0f);
+          } else {
+            actuation_signal.brake = 0.0f;
+          }
+        }
       }
 
       // Updating PID state.

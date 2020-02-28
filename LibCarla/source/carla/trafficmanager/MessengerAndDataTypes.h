@@ -63,6 +63,8 @@ namespace traffic_manager {
   /// Type of data sent by the collision stage to the motion planner stage.
   struct CollisionToPlannerData {
     bool hazard;
+    float distance_to_other_vehicle;
+    float other_vehicle_velocity;
   };
 
   /// Type of data sent by the localization stage to the traffic light stage.
